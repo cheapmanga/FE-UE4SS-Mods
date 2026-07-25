@@ -39,10 +39,3 @@ If the game launches but the UE4SS console crashes with the error `Fatal Error: 
 **[DEPANNAGE_UE4SS_Fading_Echo.pdf](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/DEPANNAGE_UE4SS_Fading_Echo.pdf)**
 
 *(The "Solution A" in the PDF will explain how to safely rename the folder and modify the Steam `appmanifest_2467880.acf` file while Steam is completely closed).*
-
----
-
-### 🔗 Raw Links (for easy copy/pasting)
-* **UE4SS (Zip)**: `https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental-latest/zDEV-UE4SS_v3.0.1-1015-g4b96f82b.zip`
-* **Signature (.lua)**: `https://github.com/cheapmanga/FE-UE4SS-Mods/raw/main/UE4SS_Signatures/StaticConstructObject.lua`
-* **Troubleshooting PDF**: `https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/DEPANNAGE_UE4SS_Fading_Echo.pdf`
