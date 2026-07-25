@@ -15,6 +15,7 @@ No compilation needed — pure Lua.
 | **FEMoonJump** | `moonjump` | Infinite jump / BotW-style flight (F7 / F6) | [⬇ FEMoonJump.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEMoonJump.zip) |
 | **FESkins** | `skin` | Access One's hidden skins | [⬇ FESkins.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESkins.zip) |
 | **FESourceGiver** | `source` | Give / connect sources | [⬇ FESourceGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESourceGiver.zip) |
+| **FETeleport** | F6 / F7 | Save your position & rotation, then teleport back to it | [⬇ FETeleport.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FETeleport.zip) |
 | **FEXpGiver** | `xp` | Give Ætherfact points (XP / skill points) | [⬇ FEXpGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEXpGiver.zip) |
 
 Each mod that ships a `README.md` documents its own commands and settings in detail.
