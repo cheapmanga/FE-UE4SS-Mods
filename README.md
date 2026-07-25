@@ -23,7 +23,7 @@ Each mod that ships a `README.md` documents its own commands and settings in det
 
 ## Installation
 
-1. Have **[UE4SS](https://github.com/UE4SS-RE/RE-UE4SS)** installed for Fading Echo.
+1. Have **[UE4SS]([https://github.com/UE4SS-RE/RE-UE4SS](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation.md))** installed for Fading Echo.
 2. Download a mod's `.zip` above and extract it into:
    ```
    <game>\UE_YGRO\Binaries\Win64\ue4ss\Mods\
