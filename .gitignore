@@ -1,0 +1,4 @@
+luac.out
+*.bak
+*.zip:Zone.Identifier
+.DS_Store
