@@ -13,7 +13,7 @@ practicing a route, retrying a jump, or hunting glitches from a fixed spot.
 Copy the folder into:
 
 ```
-<game>\UE_YGRO\Binaries\Win64\ue4ss\Mods\FETeleport\
+<game>\UE_YGRO\Binaries\Win64\ue4ss\Mods\
 ```
 
 (i.e. `FETeleport\enabled.txt` + `FETeleport\Scripts\main.lua`)
@@ -57,7 +57,4 @@ the `UStatisticSubsystem` crash path that affects the giver-style mods.
   means the pawn wasn't ready (e.g. still on a loading screen); try again once
   you're in control.
 - Teleporting far enough can land you outside the loaded zone. Pair it with
-  `FEFreeRoam` (walls / reroute off) or the Void Cancel toggle if you plan to
-  save a spot that is out of bounds.
-- `teleport=true` moves you instantly regardless of collision; if a target spot
-  refuses to take, nudge the character a little and press F7 again.
+  `Void Cancel` if you plan to save a spot that is out of bounds.
