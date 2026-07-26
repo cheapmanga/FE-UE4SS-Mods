@@ -7,7 +7,7 @@ It's the `CORE GIVER` block of the **FE Unlocker**, extracted as-is, without the
 the zones, the alpha walls or the doors.
 
 ## Installation
-Copy the folder into `<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/FECoreGiver/`
+Copy the folder into `<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/`
 (i.e. `enabled.txt` + `Scripts/main.lua`).
 
 ## Usage
@@ -34,8 +34,6 @@ power) — we don't force any variable by hand.
 as One (spawning a core without absorbing it).
 
 ## Notes
-- **Conflict with FE Unlocker**: both mods register the `core` console command.
-  Only enable one of the two, otherwise the second to load overwrites the first's handler.
 - The game's element names aren't the UI ones: `fire` → `LavaBall`,
   `glitch` → `CorruptionBall`.
 - If the ball's class isn't loaded in memory yet, the mod says so and asks you
