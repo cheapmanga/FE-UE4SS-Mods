@@ -12,7 +12,7 @@ Everything is driven from a single console command: **`skin`**.
 Copy the folder into:
 
 ```
-<game>\UE_YGRO\Binaries\Win64\ue4ss\Mods\FESkins\
+<game>\UE_YGRO\Binaries\Win64\ue4ss\Mods\
 ```
 
 so that you end up with:
