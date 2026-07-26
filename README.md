@@ -21,7 +21,7 @@ You can download and install **[UE4SS here](https://github.com/cheapmanga/FE-UE4
 | **FEVolume** | `Engine.ini` | See invisible walls, triggers & collision volumes (UE debug-draw config, not a Lua mod) | [FEVolume.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEVolume.zip) |
 | **FEXpGiver** | `xp` | Give Ætherfact points (XP / skill points) | [FEXpGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEXpGiver.zip) |
 
-Each mod that ships a `README.md` documents its own commands and settings in detail.
+Each mod ships a `README.md` that documents its own commands and settings in detail.
 
 ## Installation
 
