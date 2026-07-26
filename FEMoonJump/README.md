@@ -7,7 +7,7 @@ Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`).
 Copy the folder into:
 
 ```
-<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/FEMoonJump/
+<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/
 ```
 
 (i.e. `FEMoonJump/enabled.txt` + `FEMoonJump/Scripts/main.lua`)
@@ -21,15 +21,6 @@ Copy the folder into:
 
 Both can be active at the same time.
 
-## Console (F10)
-
-```
-moonjump              toggle
-moonjump speed <n>    ascent speed, cm/s (default 700)
-moonjump key <FKey>   watched key (default SpaceBar)
-moonjump status       current state
-multijump             toggle
-```
 
 ## How it works
 
@@ -45,13 +36,3 @@ multijump             toggle
 
 The mod only calls gameplay UFUNCTIONs and writes no stat → it doesn't enter the
 `UStatisticSubsystem` crash path described in §5 of `FadingEcho_Modding_Reference.md`.
-
-## To check in-game (not tested)
-
-- **Controller**: set `moonjump key Gamepad_FaceButton_Bottom` if you play on a pad.
-- If the jump key has been remapped, `moonjump key <FKey>` accepts any Unreal FKey name.
-- If `LaunchCharacter` doesn't respond, it means the pawn doesn't inherit from `ACharacter` as assumed:
-  the fallback would be to write `Velocity.Z` directly on the `CharacterMovement`. Let me know, we'll
-  adjust.
-- Going very high can take you out of the loaded zone: combine with `ue4ss-FEFreeRoam`
-  (red walls + reroute off) and, in case of a fatal fall, the Void Cancel toggle.
