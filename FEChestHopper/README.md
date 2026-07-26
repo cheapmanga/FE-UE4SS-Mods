@@ -7,7 +7,7 @@ UE4SS Lua mod for **Fading Echo**: teleport from chest to chest from the console
 Copy the folder into:
 
 ```
-<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/FEChestHopper/
+<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/
 ```
 
 Expected structure:
@@ -65,9 +65,3 @@ Found in `/Game/Game/Placeable/InteractiveObjects/Chest/` of the FModel extract.
   includes them all.
 - Landing at **+150 cm above** the chest, so you don't get stuck in its
   collision. Adjustable via `Z_OFFSET` at the top of `main.lua`.
-
-## Status
-
-**Not tested in-game** — written from the extract and the idioms already validated
-in the other FE mods (`RegisterConsoleCommandGlobalHandler`,
-`K2_SetActorLocation`, filtering of `Default__`). Lua syntax verified with `luac -p`.
