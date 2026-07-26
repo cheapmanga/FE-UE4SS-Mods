@@ -15,7 +15,7 @@ inherits from `UDeathBehaviorComponent`).
 Copy the folder into:
 
 ```
-<game>\UE_YGRO\Binaries\Win64\ue4ss\Mods\FEKillAll\
+<game>\UE_YGRO\Binaries\Win64\ue4ss\Mods\
 ```
 
 (i.e. `FEKillAll\enabled.txt` + `FEKillAll\Scripts\main.lua`)
