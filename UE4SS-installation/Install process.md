@@ -36,6 +36,6 @@ For the game engine to be correctly analyzed, a custom signature is required.
 If the game launches but the UE4SS console crashes with the error `Fatal Error: No mapping for the Unicode character exists in the target multi-byte code page`, this is the known folder name issue.
 
 **Read and follow the complete repair guide here:** 
-**[DEPANNAGE_UE4SS_Fading_Echo.pdf](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/DEPANNAGE_UE4SS_Fading_Echo.pdf)**
+**[DEPANNAGE_UE4SS_Fading_Echo.pdf](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/Ue4ss%20fading%20echo%20troubleshooting.md)**
 
 *(The "Solution A" in the PDF will explain how to safely rename the folder and modify the Steam `appmanifest_2467880.acf` file while Steam is completely closed).*
