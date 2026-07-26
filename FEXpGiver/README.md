@@ -82,5 +82,3 @@ both for "stat at zero" and for "stat unknown to this template".
 - No key assigned (F1-F4 = FE Unlocker, F7 = FEInfiniteCore). Console only.
 - No command clash with the other FE mods: `xp` is free.
 - The balance is bounded to `min=0` by the table: you can't drop below zero.
-- **Untested in game** — written from the extracts and the PDB. `xp status` and
-  the before/after display are there so you can verify in a single command.
