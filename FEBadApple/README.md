@@ -33,8 +33,8 @@ separately (VLC…) — it doesn't need to be inside the game.
 
 ## Quick start
 
-Game console (**²** key), in a **clear** area, looking out into empty space
-(fly up with FEMoonJump if needed — the screen lands wherever you're looking):
+Game console (**² / F10** key), in a **clear** area, looking out into empty space
+(fly up with `FEMoonJump` if needed — the screen lands wherever you're looking):
 
 ```
 badapple test        ← FIRST: spawn a single cube + diagnostic
