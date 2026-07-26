@@ -4,7 +4,7 @@ Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). Type `xp` in the in-ga
 console: +1 Ætherfact point. Every time.
 
 ## Installation
-Copy the folder into `<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/FEXpGiver/`
+Copy the folder into `<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/`
 (i.e. `enabled.txt` + `Scripts/main.lua`).
 
 ## Usage
