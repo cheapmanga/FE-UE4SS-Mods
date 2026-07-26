@@ -37,16 +37,14 @@ Each mod that ships a `README.md` documents its own commands and settings in det
 
 ## UE4SS_Signatures
 
-`UE4SS_Signatures/StaticConstructObject.lua` is an optional AOB-scan override for
-UE4SS. Some Fading Echo demo builds fail to auto-resolve `StaticConstructObject`,
+`UE4SS_Signatures/StaticConstructObject.lua` is an AOB-scan override for
+UE4SS. Fading Echo builds fail to auto-resolve `StaticConstructObject`,
 which the object-spawning mods rely on. If a mod logs a `StaticConstructObject`
 resolution error, drop this file into:
 
 ```
 <game>\UE_YGRO\Binaries\Win64\ue4ss\UE4SS_Signatures\
 ```
-
-Most builds don't need it — it's here purely for convenience.
 
 ## Notes
 
