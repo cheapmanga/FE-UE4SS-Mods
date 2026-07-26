@@ -7,7 +7,7 @@ UE4SS (Lua) mod for **Fading Echo** — increments the number of **sources conne
 Copy the `ue4ss-FESourceGiver` folder into:
 
 ```
-<game>\UE_YGRO\...\Binaries\Win64\ue4ss\Mods\FESourceGiver\
+<game>\UE_YGRO\...\Binaries\Win64\ue4ss\Mods\
 ```
 
 (keep the `Scripts/main.lua` + `enabled.txt` structure).
@@ -43,8 +43,3 @@ Two distinct stats exist in the game:
   automatically by "write then read back" (the only one whose value changes), then
   cached.
 - Everything runs in `pcall`: if one piece fails, the game keeps going.
-
-⚠️ Not tested in-game (this machine has neither the game nor a way to run it). To validate:
-`source status` first (should show a coherent total), then `source 1`.
-If `source` returns "no holder accepted", make sure you're at the **Bastion** (where
-sources are connected) when you run the command.
