@@ -15,7 +15,7 @@ The full game on Steam installs by default in a folder containing a hidden speci
 2. Navigate to the game's installation directory, then open the `Win64` folder:
    `...\steamapps\common\[Game Folder Name]\UE_YGRO\Binaries\Win64\`
 
-3. **Extract** the entire contents of the `.zip` archive directly into this `Win64` folder. (You should end up with a `ue4ss` folder and the `xinput1_3.dll` file in the same location as the game's executable).
+3. **Extract** the entire contents of the `.zip` archive directly into this `Win64` folder. (You should end up with a `ue4ss` folder and the `dwmapi.dll` file in the same location as the game's executable).
 
 ---
 
