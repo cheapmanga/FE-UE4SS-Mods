@@ -10,16 +10,16 @@ You can download and install **[UE4SS here](https://github.com/cheapmanga/FE-UE4
 
 | Mod | Console cmd | What it does | Download |
 |---|---|---|---|
-| **FEBadApple** | `badapple` | Plays the Bad Apple!! video **rendered by the game's own cubes**, frame by frame | [⬇ FEBadApple.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEBadApple.zip) |
-| **FEChestHopper** | `chest` | Teleport between the loaded chests (nearest first, tour of the zone) | [⬇ FEChestHopper.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEChestHopper.zip) |
-| **FECoreGiver** | `core` | Give / spawn an elemental core on your pawn | [⬇ FECoreGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FECoreGiver.zip) |
-| **FEKillAll** | `killall` | Kill all loaded enemies in the level | [⬇ FEKillAll.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEKillAll.zip) |
-| **FEMoonJump** | `moonjump` | Infinite jump / BotW-style flight (F7 / F6) | [⬇ FEMoonJump.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEMoonJump.zip) |
-| **FESkins** | `skin` | Access One's hidden skins | [⬇ FESkins.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESkins.zip) |
-| **FESourceGiver** | `source` | Give / connect sources | [⬇ FESourceGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESourceGiver.zip) |
-| **FETeleport** | F6 / F7 | Save your position & rotation, then teleport back to it | [⬇ FETeleport.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FETeleport.zip) |
-| **FEVolume** | `Engine.ini` | See invisible walls, triggers & collision volumes (UE debug-draw config, not a Lua mod) | [⬇ FEVolume.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEVolume.zip) |
-| **FEXpGiver** | `xp` | Give Ætherfact points (XP / skill points) | [⬇ FEXpGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEXpGiver.zip) |
+| **FEBadApple** | `badapple` | Plays the Bad Apple!! video **rendered by the game's own cubes**, frame by frame | [FEBadApple.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEBadApple.zip) |
+| **FEChestHopper** | `chest` | Teleport between the loaded chests (nearest first, tour of the zone) | [FEChestHopper.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEChestHopper.zip) |
+| **FECoreGiver** | `core` | Give / spawn an elemental core on your pawn | [FECoreGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FECoreGiver.zip) |
+| **FEKillAll** | `killall` | Kill all loaded enemies in the level | [FEKillAll.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEKillAll.zip) |
+| **FEMoonJump** | `moonjump` | Infinite jump / BotW-style flight (F7 / F6) | [FEMoonJump.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEMoonJump.zip) |
+| **FESkins** | `skin` | Access One's hidden skins | [FESkins.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESkins.zip) |
+| **FESourceGiver** | `source` | Give / connect sources | [FESourceGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESourceGiver.zip) |
+| **FETeleport** | F6 / F7 | Save your position & rotation, then teleport back to it | [FETeleport.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FETeleport.zip) |
+| **FEVolume** | `Engine.ini` | See invisible walls, triggers & collision volumes (UE debug-draw config, not a Lua mod) | [FEVolume.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEVolume.zip) |
+| **FEXpGiver** | `xp` | Give Ætherfact points (XP / skill points) | [FEXpGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEXpGiver.zip) |
 
 Each mod that ships a `README.md` documents its own commands and settings in detail.
 
