@@ -16,6 +16,10 @@ nothing. There is nothing to compile and no `main.lua`: the whole "mod" is the s
 
 The `Engine.ini` here flips on, among other things:
 
+- `show volumes` — show invisible walls, triggers & collision volumes
+
+
+All of the commands below are not tested in game
 - `r.ForceDebugViewModes` / `r.AllowDebugViewmodes` / `r.VisualizeEnabled` — unlock the debug view modes
 - `p.EnableDebugDraw` / `p.DrawDebugHelpers` — draw collision & physics helpers
 - `r.DebugDrawAllSceneQueries` / `r.VisualizeOccludedPrimitives` — show queries and occluded geometry
@@ -49,10 +53,10 @@ FadingEcho-Debug\
 
 Recommended routine each session:
 
-1. **Launch the game once** (this recreates the config folder and its default `Engine.ini`).
-2. Alt-tab out, **run `apply-engine-ini.bat`** (or copy `Engine.ini` in by hand).
-3. Alt-tab back in — the debug draw is now active. Open the UE4SS console with the
-   **²** key if you want to toggle individual `r.` / `p.` cvars live.
+1. **Launch the game once and close it** (this recreates the config folder and its default `Engine.ini`).
+2. **run `apply-engine-ini.bat`** (or copy `Engine.ini` in by hand).
+3. Launch the game again — the debug draw is now active. Open the UE4SS console with the
+   **² / F10** key and type `show volumes`.
 
 > 💡 Optional time-saver: after copying `Engine.ini`, set it to **read-only**
 > (right-click → Properties → Read-only). On some builds that stops the game from
