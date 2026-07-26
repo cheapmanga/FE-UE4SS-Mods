@@ -27,7 +27,7 @@ For the game engine to be correctly analyzed, a custom signature is required.
    **[StaticConstructObject.lua](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS_Signatures/StaticConstructObject.lua)**
 
 2. Move this `.lua` file into the UE4SS signatures folder:
-   `...\Binaries\Win64\ue4ss\signatures\`
+   `...\Binaries\Win64\ue4ss\UE4SS_Signatures\`
 
 ---
 
