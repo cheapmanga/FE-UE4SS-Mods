@@ -23,7 +23,7 @@ The full game on Steam installs by default in a folder containing a hidden speci
 
 For the game engine to be correctly analyzed, a custom signature is required.
 
-1. Download the signature file (Right-click -> Save link as):
+1. Download the signature file (Download raw file):
    **[StaticConstructObject.lua](https://downgit.github.io/#/home?url=https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS_Signatures/StaticConstructObject.lua)**
 
 2. Move this `.lua` file into the UE4SS signatures folder:
