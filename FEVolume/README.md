@@ -2,15 +2,17 @@
 
 **This is not a Lua mod.** It's an `Engine.ini` that turns on Unreal Engine's
 built-in **debug-draw / debug view modes**, which complete the console and debug
-tooling that ship with **[UE4SS](https://github.com/UE4SS-RE/RE-UE4SS)**.
+tooling that ship with **[UE4SS](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/Install%20process.md)**.
 Once it's in place you can visualize the collision geometry the game normally hides:
 invisible walls, trigger volumes, blocking volumes, scene queries, etc. — ideal for
 route planning and glitch hunting.
 
-**[UE4SS](https://github.com/UE4SS-RE/RE-UE4SS) is required** — it's what exposes the
+**[UE4SS](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/Install%20process.md) is required** — it's what exposes the
 debug console and the debug-view machinery this config drives; without it the mod does
 nothing. There is nothing to compile and no `main.lua`: the whole "mod" is the single
 `Engine.ini` file, applied on top of an UE4SS install.
+
+**Download:** [⬇ FEVolume.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEVolume.zip)
 
 ## What it enables
 

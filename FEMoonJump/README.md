@@ -2,6 +2,8 @@
 
 Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`).
 
+**Download:** [⬇ FEMoonJump.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEMoonJump.zip)
+
 ## Installation
 
 Copy the folder into:

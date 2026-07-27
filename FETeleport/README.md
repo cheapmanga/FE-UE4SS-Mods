@@ -8,6 +8,8 @@ A lightweight alternative to the Cheat Engine teleport table: press one key to
 memorize where you stand, move anywhere, press another to snap back. Ideal for
 practicing a route, retrying a jump, or hunting glitches from a fixed spot.
 
+**Download:** [⬇ FETeleport.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FETeleport.zip)
+
 ## Installation
 
 Copy the folder into:

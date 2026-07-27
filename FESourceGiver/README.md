@@ -2,6 +2,8 @@
 
 UE4SS (Lua) mod for **Fading Echo** — increments the number of **sources connected to the Bastion** via a console command.
 
+**Download:** [⬇ FESourceGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESourceGiver.zip)
+
 ## Installation
 
 Copy the `ue4ss-FESourceGiver` folder into:

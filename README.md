@@ -13,11 +13,13 @@ You can download and install **[UE4SS here](https://github.com/cheapmanga/FE-UE4
 | **[FEBadApple](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FEBadApple)** | `badapple` | Plays the Bad Apple!! video **rendered by the game's own cubes**, frame by frame | [FEBadApple.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEBadApple.zip) |
 | **[FEChestHopper](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FEChestHopper)** | `chest` | Teleport between the loaded chests (nearest first, tour of the zone) | [FEChestHopper.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEChestHopper.zip) |
 | **[FECoreGiver](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FECoreGiver)** | `core` | Give / spawn an elemental core on your pawn | [FECoreGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FECoreGiver.zip) |
+| **[FEHud](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FEHud)** | `hud` | Show / hide the HUD — clean screenshots and capture | [FEHud.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEHud.zip) |
 | **[FEKillAll](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FEKillAll)** | `killall` | Kill all loaded enemies in the level | [FEKillAll.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEKillAll.zip) |
 | **[FEMoonJump](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FEMoonJump)** | `moonjump` | Infinite jump / BotW-style flight (F7 / F6) | [FEMoonJump.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEMoonJump.zip) |
 | **[FESkins](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FESkins)** | `skin` | Access One's hidden skins | [FESkins.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESkins.zip) |
 | **[FESourceGiver](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FESourceGiver)** | `source` | Give / connect sources | [FESourceGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESourceGiver.zip) |
 | **[FETeleport](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FETeleport)** | F6 / F7 | Save your position & rotation, then teleport back to it | [FETeleport.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FETeleport.zip) |
+| **[FEVoidCancel](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FEVoidCancel)** | F9 / F10 | Toggle the Void Cancel — fall forever, no void, no respawn (and turn it back off) | [FEVoidCancel.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEVoidCancel.zip) |
 | **[FEVolume](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FEVolume)** | `Engine.ini` | See invisible walls, triggers & collision volumes (UE debug-draw config, not a Lua mod) | [FEVolume.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEVolume.zip) |
 | **[FEXpGiver](https://github.com/cheapmanga/FE-UE4SS-Mods/tree/main/FEXpGiver)** | `xp` | Give Ætherfact points (XP / skill points) | [FEXpGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEXpGiver.zip) |
 
@@ -47,6 +49,12 @@ resolution error, drop this file into:
 ```
 <game>\UE_YGRO\Binaries\Win64\ue4ss\UE4SS_Signatures\
 ```
+
+## Contributing
+
+Mods, fixes and bug reports are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md)
+for the folder layout, the code style, and the UE4SS pitfalls worth knowing before
+you start.
 
 ## Notes
 

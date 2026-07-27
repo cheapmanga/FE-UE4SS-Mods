@@ -10,6 +10,8 @@ Instead of going through the CheatManager, this mod enumerates the live enemies 
 and triggers each one's death through its own `BP_DeathBehaviour` component (which
 inherits from `UDeathBehaviorComponent`).
 
+**Download:** [⬇ FEKillAll.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEKillAll.zip)
+
 ## Installation
 
 Copy the folder into:
