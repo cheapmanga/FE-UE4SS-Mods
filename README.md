@@ -52,5 +52,4 @@ resolution error, drop this file into:
 
 - These are debug / speedrun / sandbox tools for a single-player game.
 - The game itself is not included.
-- FEBadApple bundles its frame data (`Scripts/data/`) and its soundtrack
-  (`badapple_audio.mp4`) — keep them next to the mod.
+- Do not create mods with "UE4SS Debugging Tools (OpenGL 3) - External Thread" or else it will ask you administrator rights to remove it. Even if you have them you will not be able to remove them. You will have to remove it using the console.
