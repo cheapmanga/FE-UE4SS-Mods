@@ -1,62 +1,62 @@
 -- ============================================================================
---  FADING ECHO — SOURCE GIVER  (sources branchées au Bastion)
+--  FADING ECHO — SOURCE GIVER  (sources connected to the Bastion)
 --
---  Console in-game (F10) :
+--  In-game console (F10) :
 --    source              +1 source
---    source <n>          +n sources           (ex. source 3)
---    source set <n>      fixe le total à n     (ex. source set 12 → ouvre la fin)
---    source status       affiche le total courant, sans rien changer
---    source unlocked <n> +n sources "trouvées" (jalons 1/3/6/9), voir plus bas
+--    source <n>          +n sources           (e.g. source 3)
+--    source set <n>      sets the total to n   (e.g. source set 12 → opens the ending)
+--    source status       shows the current total, without changing anything
+--    source unlocked <n> +n "found" sources    (milestones 1/3/6/9), see below
 --
 --  ---------------------------------------------------------------------------
---  CE QU'EST UNE "SOURCE EFFECTUÉE" (relevé dans les données du jeu)
+--  WHAT A "COMPLETED SOURCE" IS (found in the game data)
 --
---  Deux statistiques distinctes portent le mot "Source" dans FE :
---    * ConnectedSources = sources BRANCHÉES au Bastion. C'est le compteur qui
---      ouvre la fin : le Level BP YGRO_Bastion_Sh0_Gameplay teste
---      `ConnectedSources == 12` (StatisticCondition, index 18) pour lancer le
+--  Two distinct statistics carry the word "Source" in FE :
+--    * ConnectedSources = sources CONNECTED to the Bastion. It's the counter that
+--      opens the ending : the Level BP YGRO_Bastion_Sh0_Gameplay tests
+--      `ConnectedSources == 12` (StatisticCondition, index 18) to trigger the
 --      FinalFight (12 = 3 sources × 4 zones Volcano/Tree/Quarry/Wonder).
---    * UnlockedSources = sources TROUVÉES dans les zones. Jalons de progression
---      1 / 3 / 6 / 9 (index 23). N'ouvre PAS la fin à elle seule.
+--    * UnlockedSources = sources FOUND in the zones. Progression milestones
+--      1 / 3 / 6 / 9 (index 23). Does NOT open the ending on its own.
 --
---  Par défaut ce mod incrémente **ConnectedSources** (= "sources effectuées",
---  celles qui comptent pour la fin). `source unlocked <n>` touche l'autre.
+--  By default this mod increments **ConnectedSources** (= "completed sources",
+--  the ones that count toward the ending). `source unlocked <n>` touches the other.
 --
 --  ---------------------------------------------------------------------------
---  API — UStatisticHolderComponent, fonctions BlueprintCallable (symboles PDB) :
+--  API — UStatisticHolderComponent, BlueprintCallable functions (PDB symbols) :
 --      ?IncreaseStatisticBaseValue@UStatisticHolderComponent@@QEAAXVFString@@M@Z
 --      ?SetStatisticBaseValue@UStatisticHolderComponent@@QEAAXVFString@@M@Z
 --      ?GetStatisticValue@UStatisticHolderComponent@@QEBAMVFString@@@Z
---  soit : (FString StatisticName, float Value).
+--  that is : (FString StatisticName, float Value).
 --
---  /!\ PIÈGE — StatisticName est une **FString**, PAS une FName. Passer un objet
---  FName fait crasher le jeu (push_strproperty → FString::SetCharArray → ACCESS
---  VIOLATION). On passe donc une chaîne Lua brute.
+--  /!\ PITFALL — StatisticName is an **FString**, NOT an FName. Passing an
+--  FName object crashes the game (push_strproperty → FString::SetCharArray → ACCESS
+--  VIOLATION). So we pass a raw Lua string.
 --
---  ConnectedSources est une stat de l'entité **World** (template
---  DT_WorldEntityStatTemplate), pas du holder des perks. Plusieurs
---  StatisticHolderComponent coexistent (un par template) et sont indistinguables
---  en lecture seule : GetStatisticValue renvoie 0 aussi bien pour "stat à zéro"
---  que pour "stat inconnue de ce template". On tranche donc en écrivant : le bon
---  holder est le seul dont la valeur bouge réellement après un write. Une fois
---  trouvé, on le met en cache pour les commandes suivantes.
+--  ConnectedSources is a stat of the **World** entity (template
+--  DT_WorldEntityStatTemplate), not of the perks holder. Several
+--  StatisticHolderComponent coexist (one per template) and are indistinguishable
+--  read-only : GetStatisticValue returns 0 both for "stat at zero"
+--  and for "stat unknown to this template". So we decide by writing : the right
+--  holder is the only one whose value actually moves after a write. Once
+--  found, we cache it for the following commands.
 -- ============================================================================
 
 local UEHelpers = require("UEHelpers")
 
 local STAT_CONNECTED = "ConnectedSources"
 local STAT_UNLOCKED  = "UnlockedSources"
-local GOAL           = 12   -- ConnectedSources qui ouvre le FinalFight
+local GOAL           = 12   -- ConnectedSources that opens the FinalFight
 
 local function log(m) print("[SourceGiver] " .. tostring(m) .. "\n") end
 
--- Écrit à la fois dans la console in-game (Ar) et dans la console UE4SS.
+-- Writes both to the in-game console (Ar) and to the UE4SS console.
 local function cout(Ar, msg)
     pcall(function() if Ar then Ar:Log(msg) end end)
     log(msg)
 end
 
--- vrai objet = pas un Class Default Object.
+-- real object = not a Class Default Object.
 local function isReal(o)
     if not (o and o:IsValid()) then return false end
     local fn = ""; pcall(function() fn = o:GetFullName() end)
@@ -79,7 +79,7 @@ local function GetPawn()
 end
 
 -- ---------------------------------------------------------------------------
---  Holders de statistiques
+--  Statistic holders
 -- ---------------------------------------------------------------------------
 local function AllHolders()
     local out, seen = {}, {}
@@ -97,7 +97,7 @@ local function AllHolders()
     return out
 end
 
--- /!\ chaîne Lua brute (FString), jamais un FName. Voir l'entête.
+-- /!\ raw Lua string (FString), never an FName. See the header.
 local function ReadStat(holder, stat)
     local v
     local ok = pcall(function() v = holder:GetStatisticValue(stat) end)
@@ -111,17 +111,17 @@ local function holderReady(h)
     return ready ~= false
 end
 
--- Cache du holder qui porte la stat World (une fois identifié par un write qui
--- a bougé, on le réutilise pour les commandes suivantes).
+-- Cache of the holder that carries the World stat (once identified by a write
+-- that moved, we reuse it for the following commands).
 local sourceHolder = nil
 
 local function cachedHolderValid()
     return sourceHolder and sourceHolder:IsValid() and isReal(sourceHolder)
 end
 
--- Incrémente `stat` de n sur le bon holder. Renvoie (holder, avant, apres) ou nil.
+-- Increments `stat` by n on the right holder. Returns (holder, before, after) or nil.
 local function IncreaseStat(stat, n)
-    -- 1) tente d'abord le holder en cache.
+    -- 1) try the cached holder first.
     if cachedHolderValid() and holderReady(sourceHolder) then
         local before = ReadStat(sourceHolder, stat)
         if before then
@@ -130,7 +130,7 @@ local function IncreaseStat(stat, n)
             if after and after > before then return sourceHolder, before, after end
         end
     end
-    -- 2) sinon on balaie tous les holders : le bon est celui dont la valeur bouge.
+    -- 2) otherwise sweep all holders : the right one is the one whose value moves.
     for _, h in ipairs(AllHolders()) do
         if holderReady(h) then
             local before = ReadStat(h, stat)
@@ -147,7 +147,7 @@ local function IncreaseStat(stat, n)
     return nil
 end
 
--- Fixe `stat` à target sur le bon holder. Renvoie (holder, avant, apres) ou nil.
+-- Sets `stat` to target on the right holder. Returns (holder, before, after) or nil.
 local function SetStat(stat, target)
     local function tryOn(h)
         if not holderReady(h) then return nil end
@@ -155,7 +155,7 @@ local function SetStat(stat, target)
         if not before then return nil end
         pcall(function() h:SetStatisticBaseValue(stat, target * 1.0) end)
         local after = ReadStat(h, stat)
-        -- accepté si la valeur vaut bien la cible (et qu'on a pu la relire).
+        -- accepted if the value indeed equals the target (and we could read it back).
         if after and math.abs(after - target) < 0.001 then return before, after end
         return nil
     end
@@ -171,14 +171,14 @@ local function SetStat(stat, target)
     return nil
 end
 
--- Lit `stat` sur le premier holder qui la connaît (préférence au cache).
+-- Reads `stat` on the first holder that knows it (cache preferred).
 local function StatusOf(stat)
     if cachedHolderValid() then
         local v = ReadStat(sourceHolder, stat)
         if v then return v end
     end
-    -- En lecture seule on ne distingue pas "0" de "inconnu" ; on renvoie la plus
-    -- grande valeur lue (une source déjà branchée = valeur > 0 sur le bon holder).
+    -- Read-only we can't tell "0" from "unknown" ; we return the largest
+    -- value read (an already-connected source = value > 0 on the right holder).
     local best = nil
     for _, h in ipairs(AllHolders()) do
         local v = ReadStat(h, stat)
@@ -188,7 +188,7 @@ local function StatusOf(stat)
 end
 
 -- ---------------------------------------------------------------------------
---  Commande console
+--  Console command
 -- ---------------------------------------------------------------------------
 local USAGE = "[source] usage : source | source <n> | source set <n> | source status | source unlocked <n>"
 
@@ -244,7 +244,7 @@ RegisterConsoleCommandGlobalHandler("source", function(FullCommand, Parameters, 
         return true
     end
 
-    -- source  |  source <n>   → incrémente ConnectedSources
+    -- source  |  source <n>   → increments ConnectedSources
     local n = 1
     if a1 then
         n = tonumber(a1)

@@ -1,22 +1,22 @@
 -- ============================================================================
---  FE KILL ALL  —  contournement de KillAllEnemies
+--  FE KILL ALL  —  workaround for KillAllEnemies
 --
---  Pourquoi ce mod : UYgroCheatManager_C::KillAllEnemies() s'appelle sans
---  erreur mais ne tue pas les ennemis du niveau. Son tableau interne
---  `Enemies` semble alimenté par le systeme de squad de debug, pas par les
---  ennemis places dans la map.
+--  Why this mod: UYgroCheatManager_C::KillAllEnemies() gets called without
+--  error but does not kill the level's enemies. Its internal `Enemies` array
+--  seems to be populated by the debug squad system, not by the enemies
+--  placed in the map.
 --
---  Ici on ne passe pas par le CheatManager : on enumere les ennemis vivants
---  et on declenche leur mort via leur propre composant BP_DeathBehaviour,
---  qui herite de UDeathBehaviorComponent.
+--  Here we don't go through the CheatManager: we enumerate the living enemies
+--  and trigger their death via their own BP_DeathBehaviour component,
+--  which inherits from UDeathBehaviorComponent.
 --
---  Commandes (console du jeu, touche ²) :
---     killall          tue tous les ennemis charges
---     killall count    compte les ennemis sans rien tuer
+--  Commands (game console, ² key):
+--     killall          kills every loaded enemy
+--     killall count    counts the enemies without killing anything
 --
---  ⚠️ PIEGE `Ar` (documente dans FEDevMenu, avait crashe la v1) :
---  le FOutputDevice n'est valide QUE dans le corps synchrone du handler.
---  Jamais dans du code differe -> ici tout est synchrone, donc Ar est sur.
+--  ⚠️ `Ar` PITFALL (documented in FEDevMenu, had crashed v1):
+--  the FOutputDevice is valid ONLY within the handler's synchronous body.
+--  Never in deferred code -> here everything is synchronous, so Ar is safe.
 -- ============================================================================
 
 local ENEMY_CLASS = "BP_EnemyBase_C"
@@ -28,7 +28,7 @@ local function say(Ar, m)
     if Ar then pcall(function() Ar:Log("[KillAll] " .. tostring(m)) end) end
 end
 
--- Un Class Default Object est un gabarit, pas un ennemi vivant.
+-- A Class Default Object is a template, not a living enemy.
 local function isLive(o)
     if not (o and o:IsValid()) then return false end
     local fn = ""
@@ -46,7 +46,7 @@ local function listEnemies()
     return out
 end
 
--- Declenche la mort d'un ennemi. Renvoie (true, methode) ou (false, raison).
+-- Triggers an enemy's death. Returns (true, method) or (false, reason).
 local function killOne(enemy)
     local dc = nil
     pcall(function() dc = enemy.BP_DeathBehaviour end)
@@ -54,15 +54,15 @@ local function killOne(enemy)
         return false, "pas de BP_DeathBehaviour"
     end
 
-    -- 1) Voie propre : héritée de UDeathBehaviorComponent, BlueprintCallable.
+    -- 1) Clean path: inherited from UDeathBehaviorComponent, BlueprintCallable.
     local ok = pcall(function() dc:NotifyHealthToZero() end)
     if ok then return true, "NotifyHealthToZero" end
 
-    -- 2) Repli : fonction de la Blueprint. Nom avec ESPACE -> syntaxe crochets.
+    -- 2) Fallback: Blueprint function. Name with a SPACE -> bracket syntax.
     ok = pcall(function() dc["Die Common"](dc) end)
     if ok then return true, "Die Common" end
 
-    -- 3) Dernier recours : le chemin "chute mortelle".
+    -- 3) Last resort: the "fatal fall" path.
     ok = pcall(function() dc:TriggerInstantFallDeath() end)
     if ok then return true, "TriggerInstantFallDeath" end
 
