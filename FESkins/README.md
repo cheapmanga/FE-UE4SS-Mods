@@ -7,6 +7,8 @@ One's black silhouette (outline).
 
 Everything is driven from a single console command: **`skin`**.
 
+**Download:** [⬇ FESkins.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESkins.zip)
+
 ## Installation
 
 Copy the folder into:

@@ -9,6 +9,8 @@ frame.
 
 ---
 
+**Download:** [⬇ FEBadApple.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEBadApple.zip)
+
 ## Installation
 
 Copy the folder (without the `ue4ss-` prefix) into:

@@ -6,6 +6,8 @@ give you an elemental core on demand.
 It's the `CORE GIVER` block of the **FE Unlocker**, extracted as-is, without the elevators,
 the zones, the alpha walls or the doors.
 
+**Download:** [⬇ FECoreGiver.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FECoreGiver.zip)
+
 ## Installation
 Copy the folder into `<game>/UE_YGRO/Binaries/Win64/ue4ss/Mods/`
 (i.e. `enabled.txt` + `Scripts/main.lua`).

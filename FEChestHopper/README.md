@@ -2,6 +2,8 @@
 
 UE4SS Lua mod for **Fading Echo**: teleport from chest to chest from the console.
 
+**Download:** [⬇ FEChestHopper.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FEChestHopper.zip)
+
 ## Installation
 
 Copy the folder into:
