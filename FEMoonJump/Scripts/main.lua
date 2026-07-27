@@ -1,31 +1,31 @@
 -- ============================================================================
---  FADING ECHO — MOON JUMP  (mod séparé : saut infini / vol à la BotW)
+--  FADING ECHO — MOON JUMP  (separate mod: infinite jump / BotW-style flight)
 --
---  Deux modes indépendants :
---   - MOONJUMP (F7)  : tant que SAUT est MAINTENU, on force la vitesse verticale
---                      -> le perso monte en continu (le "moonjump" de BotW).
---                      Repose sur LaunchCharacter(vel, false, true) : UFUNCTION
---                      d'ACharacter, donc appelable via UE4SS.
---   - MULTIJUMP (F6) : JumpMaxCount = 999 -> on peut re-sauter en l'air à volonté
---                      (saut infini "classique", garde la physique du jeu).
+--  Two independent modes:
+--   - MOONJUMP (F7)  : as long as JUMP is HELD, we force the vertical velocity
+--                      -> the character rises continuously (BotW's "moonjump").
+--                      Relies on LaunchCharacter(vel, false, true): a UFUNCTION
+--                      of ACharacter, hence callable via UE4SS.
+--   - MULTIJUMP (F6) : JumpMaxCount = 999 -> you can re-jump in mid-air at will
+--                      ("classic" infinite jump, keeps the game's physics).
 --
---  Console (F10) :
+--  Console (F10):
 --   moonjump            toggle moonjump
---   moonjump speed <n>  vitesse de montée (défaut 700, en cm/s)
---   moonjump key <FKey> touche surveillée (défaut SpaceBar ; ex. Gamepad_FaceButton_Bottom)
+--   moonjump speed <n>  rise speed (default 700, in cm/s)
+--   moonjump key <FKey> watched key (default SpaceBar; e.g. Gamepad_FaceButton_Bottom)
 --   multijump           toggle multijump
---   moonjump status     état courant
+--   moonjump status     current state
 -- ============================================================================
 
 local UEHelpers = require("UEHelpers")
 
-local RISE_SPEED   = 700          -- cm/s ; ~700 = montée franche mais contrôlable
-local JUMP_KEY     = "SpaceBar"   -- FKey surveillée pour le maintien
+local RISE_SPEED   = 700          -- cm/s; ~700 = strong but controllable rise
+local JUMP_KEY     = "SpaceBar"   -- FKey watched for the hold
 local MULTI_COUNT  = 999
 local TICK_MS      = 16           -- ~60 Hz
 
 local MoonOn, MultiOn = false, false
-local SavedJumpMax = nil          -- pour restaurer proprement
+local SavedJumpMax = nil          -- to restore cleanly
 
 local function log(m) print("[MoonJump] " .. tostring(m) .. "\n") end
 local function cout(Ar, m)
@@ -34,7 +34,7 @@ local function cout(Ar, m)
 end
 
 -- ---------------------------------------------------------------------------
---  Joueur / controller
+--  Player / controller
 -- ---------------------------------------------------------------------------
 local function isRealActor(a)
     if not (a and a:IsValid()) then return false end
@@ -68,7 +68,7 @@ local function IsJumpHeld(pc)
 end
 
 -- ---------------------------------------------------------------------------
---  MOONJUMP : boucle de montée tant que la touche est tenue
+--  MOONJUMP: rise loop as long as the key is held
 -- ---------------------------------------------------------------------------
 LoopAsync(TICK_MS, function()
     if MoonOn then
@@ -79,9 +79,9 @@ LoopAsync(TICK_MS, function()
             if not isRealActor(pawn) then return end
             ExecuteInGameThread(function()
                 pcall(function()
-                    -- XYOverride=false : on garde le contrôle horizontal.
-                    -- ZOverride=true   : on écrase la vitesse verticale -> montée nette,
-                    --                    la gravité ne s'accumule pas.
+                    -- XYOverride=false : we keep horizontal control.
+                    -- ZOverride=true   : we override the vertical velocity -> clean rise,
+                    --                    gravity doesn't accumulate.
                     pawn:LaunchCharacter({ X = 0.0, Y = 0.0, Z = RISE_SPEED * 1.0 }, false, true)
                 end)
             end)
@@ -108,7 +108,7 @@ local function ApplyMultiJump(on)
     return true
 end
 
--- Le pawn est recréé au respawn / changement de zone : on réapplique en fond.
+-- The pawn is recreated on respawn / zone change: we reapply in the background.
 LoopAsync(2000, function()
     if MultiOn then
         pcall(function()

@@ -1,79 +1,79 @@
 -- ============================================================================
 --  FADING ECHO — SKINS  (v2)
 --
---  Applique les skins cachés de One directement sur son mesh, sans passer par
---  le menu d'options (voir "POURQUOI PAS LE MENU" plus bas).
+--  Applies One's hidden skins directly to his mesh, without going through
+--  the options menu (see "WHY NOT THE MENU" below).
 --
---  Commandes (console du jeu = touche ² , ou console UE4SS) :
---     skin              état + rappel des commandes
---     skin slots        liste les slots matériaux du joueur et leur contenu
---     skin one <0-4>    applique le jeu de matériaux Skin0..Skin4
---     skin reset        remet les matériaux d'origine
---     skin lock         réapplique en boucle (si le jeu écrase notre skin)
---     skin menu         tentative de branchement du spinner de Bob (voir plus bas)
+--  Commands (game console = the ² key, or UE4SS console):
+--     skin              status + command reminder
+--     skin slots        lists the player's material slots and their contents
+--     skin one <0-4>    applies the Skin0..Skin4 material set
+--     skin reset        restores the original materials
+--     skin lock         reapplies in a loop (if the game overwrites our skin)
+--     skin menu         attempt to wire in Bob's spinner (see below)
 --
---  Retours détaillés : FENÊTRE DE CONSOLE UE4SS.
+--  Detailed output: UE4SS CONSOLE WINDOW.
 --
 --  ---------------------------------------------------------------------------
---  CE QUI EXISTE DANS LE JEU (build 1.0.27900)
+--  WHAT EXISTS IN THE GAME (build 1.0.27900)
 --
---  Cinq jeux de matériaux complets, packagés, dont TROIS sans aucune entrée de
---  menu : /Game/Art/Character/Hero/Skin<N>/  avec, pour chaque N de 0 à 4 :
---      MI_MainCharaBody_Skin<N>       (corps)
---      MI_MainCharaHead_Skin<N>       (tête)
+--  Five complete, packaged material sets, THREE of which have no menu entry at
+--  all: /Game/Art/Character/Hero/Skin<N>/  with, for each N from 0 to 4:
+--      MI_MainCharaBody_Skin<N>       (body)
+--      MI_MainCharaHead_Skin<N>       (head)
 --      MI_MainCharaCape_cinematic_Skin<N>  (cape)
---  Le menu Customization n'expose que Default (Skin0) et "Hellgur One" (Skin1).
+--  The Customization menu only exposes Default (Skin0) and "Hellgur One" (Skin1).
 --
 --  ---------------------------------------------------------------------------
---  POURQUOI PAS LE MENU (constaté, ne pas recommencer)
+--  WHY NOT THE MENU (established, do not retry)
 --
---  Options > Customization est piloté par des DataAssets :
+--  Options > Customization is driven by DataAssets:
 --      DA_Skin_SubSection.OptionDescriptors = [ DA_Skin_One_Spinner ]
---  DA_Skin_Bob_Spinner existe, complet ("Marcel Bob", délégué SetSkin), mais
---  n'est référencé nulle part : asset orphelin, jamais raccordé par les devs.
+--  DA_Skin_Bob_Spinner exists, complete ("Marcel Bob", SetSkin delegate), but
+--  is referenced nowhere: orphan asset, never hooked up by the devs.
 --
---  L'AJOUT AU TArray FONCTIONNE (vérifié : 1 -> 2 entrées, relecture correcte),
---  MAIS L'AFFICHAGE NE CHANGE PAS : la liste est construite en C++ à la création
---  de l'écran d'options, et AUCUNE fonction de reconstruction n'est exposée
---  (UOptionMenuScreen n'a que 5 UFUNCTION, toutes de navigation ; UOptionSubsystem
---  n'expose que GetOption). Tenté après coup ET au démarrage : sans effet.
---  => On agit donc directement sur le mesh. 'skin menu' garde la tentative, pour
---     mémoire, mais elle ne change rien à l'UI.
+--  ADDING TO THE TArray WORKS (verified: 1 -> 2 entries, read back correctly),
+--  BUT THE DISPLAY DOES NOT CHANGE: the list is built in C++ when the options
+--  screen is created, and NO rebuild function is exposed
+--  (UOptionMenuScreen has only 5 UFUNCTION, all navigation; UOptionSubsystem
+--  only exposes GetOption). Tried afterward AND at startup: no effect.
+--  => So we act directly on the mesh. 'skin menu' keeps the attempt, for the
+--     record, but it changes nothing in the UI.
 --
 --  ---------------------------------------------------------------------------
---  PIÈGES UE4SS DÉJÀ PAYÉS — NE PAS LES REFAIRE
---   1. `Ar` n'est valide QUE dans le corps SYNCHRONE du handler (sinon AV 0x8).
---   2. Une UFUNCTION n'est PAS une `function` Lua : ne jamais tester le type.
---   3. Jamais de chaîne Lua brute sur un paramètre FName/FText (AV 0x70).
---      => on utilise SetMaterial(index, mat), PAS SetMaterialByName(FName, mat).
+--  UE4SS PITFALLS ALREADY PAID FOR — DO NOT REPEAT THEM
+--   1. `Ar` is valid ONLY inside the SYNCHRONOUS body of the handler (else AV 0x8).
+--   2. A UFUNCTION is NOT a Lua `function`: never test the type.
+--   3. Never pass a raw Lua string to an FName/FText parameter (AV 0x70).
+--      => we use SetMaterial(index, mat), NOT SetMaterialByName(FName, mat).
 -- ============================================================================
 
 local UEHelpers = require("UEHelpers")
 
 -- ============================================================================
---  APPLICATION AU DÉMARRAGE — piloté par le launcher (fe_launcher/core/skins.py)
---  Ces constantes sont réécrites par le launcher ; ne pas renommer les clés.
---  Le mod ne s'active QUE par console F10 en temps normal ; ce bloc permet
---  d'appliquer un skin dès le chargement, sans avoir à taper de commande.
+--  STARTUP APPLICATION — driven by the launcher (fe_launcher/core/skins.py)
+--  These constants are rewritten by the launcher; do not rename the keys.
+--  The mod normally activates ONLY via the F10 console; this block lets you
+--  apply a skin as soon as the level loads, without typing a command.
 -- ============================================================================
-local BOOT_MESH    = "none"    -- alias de mesh à appliquer au démarrage, ou "none"
-local BOOT_SKIN    = -1        -- skin de One à appliquer (0-4), ou -1 pour ne rien faire
-local BOOT_OUTLINE = "keep"    -- "keep" | "off" | "on" : état de la silhouette au démarrage
-local BOOT_HIDE_STICK  = false -- true = cacher le bâton (BP_Stick_C) au démarrage
-local BOOT_HIDE_HAIR   = false -- true = cacher le bigoudi/cheveux (BP_Bigoudi_C) au démarrage
-local BOOT_DELAY_MS = 4000     -- délai avant application (laisse le pawn se charger)
+local BOOT_MESH    = "none"    -- mesh alias to apply at startup, or "none"
+local BOOT_SKIN    = -1        -- One skin to apply (0-4), or -1 to do nothing
+local BOOT_OUTLINE = "keep"    -- "keep" | "off" | "on": outline state at startup
+local BOOT_HIDE_STICK  = false -- true = hide the stick (BP_Stick_C) at startup
+local BOOT_HIDE_HAIR   = false -- true = hide the curler/hair (BP_Bigoudi_C) at startup
+local BOOT_DELAY_MS = 4000     -- delay before applying (lets the pawn load)
 
 local SKIN_BASE = "/Game/Art/Character/Hero/Skin"
-local PARTS = {                      -- motif de slot -> préfixe du matériau
+local PARTS = {                      -- slot pattern -> material prefix
     { key = "Body", asset = "MI_MainCharaBody_Skin" },
     { key = "Head", asset = "MI_MainCharaHead_Skin" },
     { key = "Cape", asset = "MI_MainCharaCape_cinematic_Skin" },
 }
 
--- ⚠️ Les boucles de reapplication tournent toutes les 1,5 s : sans garde-fou
--- elles inondent la console et rendent impossible la lecture d'une commande
--- (constate 22/07). quietDepth > 0 = sortie supprimee. Les boucles s'executent
--- en mode silencieux et n'emettent qu'UNE ligne quand leur resultat CHANGE.
+-- ⚠️ The reapplication loops run every 1.5 s: without a safeguard they flood
+-- the console and make it impossible to read a command
+-- (observed 22/07). quietDepth > 0 = output suppressed. The loops run in
+-- silent mode and emit only ONE line when their result CHANGES.
 local quietDepth = 0
 local function log(m)
     if quietDepth > 0 then return end
@@ -87,7 +87,7 @@ local function quietly(fn)
     if not ok then return nil end
     return r
 end
-local function say(Ar, m)            -- corps synchrone du handler UNIQUEMENT
+local function say(Ar, m)            -- SYNCHRONOUS handler body ONLY
     log(m)
     if Ar then pcall(function() Ar:Log("[FESkins] " .. tostring(m)) end) end
 end
@@ -95,10 +95,10 @@ end
 -- ---------------------------------------------------------------------------
 --  Helpers
 -- ---------------------------------------------------------------------------
--- ⚠️ `o:IsValid()` PLANTE si `o` n'est pas un UObject : "attempt to call a nil
--- value (method 'IsValid')". Cas réel (22/07) : itérer avec pairs() le TArray
--- renvoyé par K2_GetComponentsByClass sort des entrées non-objets.
--- TOUT test de validité passe par ici.
+-- ⚠️ `o:IsValid()` CRASHES if `o` is not a UObject: "attempt to call a nil
+-- value (method 'IsValid')". Real case (22/07): iterating with pairs() over the
+-- TArray returned by K2_GetComponentsByClass yields non-object entries.
+-- EVERY validity check goes through here.
 local function okObj(o)
     if not o then return false end
     local v = false
@@ -143,8 +143,8 @@ local function GetPawn()
     return nil
 end
 
--- Le mesh du personnage est le SkeletalMeshComponent standard d'ACharacter
--- (CharacterMesh0, sur SK_Hero_facial).
+-- The character's mesh is ACharacter's standard SkeletalMeshComponent
+-- (CharacterMesh0, on SK_Hero_facial).
 local function GetMesh()
     local pawn = GetPawn()
     if not pawn then return nil, "joueur introuvable" end
@@ -154,11 +154,11 @@ local function GetMesh()
     return nil, "composant Mesh introuvable sur le pawn"
 end
 
--- ⚠️ Un asset dont le personnage n'est PAS présent dans la zone n'est pas chargé
--- en mémoire : StaticFindObject échoue tant que LoadAsset n'a pas abouti
--- (constaté 22/07 : SKEL_Agent / SKEL_Rusher / SKEL_Ranged / SK_Builder
--- introuvables alors que les chemins sont corrects).
--- On insiste donc : LoadAsset sous ses deux formes, puis plusieurs relectures.
+-- ⚠️ An asset whose character is NOT present in the area is not loaded into
+-- memory: StaticFindObject fails until LoadAsset has succeeded
+-- (observed 22/07: SKEL_Agent / SKEL_Rusher / SKEL_Ranged / SK_Builder
+-- not found even though the paths are correct).
+-- So we insist: LoadAsset in both its forms, then several read-backs.
 local function Resolve(path)
     local short = string.match(path, "([^/]+)$")
     local full = path .. "." .. short
@@ -176,9 +176,9 @@ local function Resolve(path)
 end
 
 -- ---------------------------------------------------------------------------
---  Découverte des slots
---  On lit le matériau courant de chaque slot et on déduit sa nature (Body /
---  Head / Cape) depuis son nom. Plus fiable que de présumer un ordre d'index.
+--  Slot discovery
+--  We read each slot's current material and infer its nature (Body /
+--  Head / Cape) from its name. More reliable than assuming an index order.
 -- ---------------------------------------------------------------------------
 local function ReadSlots()
     local mesh, err = GetMesh()
@@ -188,7 +188,7 @@ local function ReadSlots()
     if n == 0 then return nil, "aucun slot matériau (mesh pas encore initialisé ?)" end
 
     local slots = {}
-    for i = 0, n - 1 do                       -- index moteur : 0-based
+    for i = 0, n - 1 do                       -- engine index: 0-based
         local mat
         pcall(function() mat = mesh:GetMaterial(i) end)
         local nm = ShortName(mat)
@@ -202,7 +202,7 @@ local function ReadSlots()
 end
 
 -- ---------------------------------------------------------------------------
---  Mémoire des matériaux d'origine (pour 'skin reset')
+--  Memory of the original materials (for 'skin reset')
 -- ---------------------------------------------------------------------------
 local original = nil
 
@@ -214,9 +214,9 @@ local function RememberOriginal(slots)
 end
 
 -- ---------------------------------------------------------------------------
---  Application d'un skin
+--  Applying a skin
 -- ---------------------------------------------------------------------------
-local current = nil       -- index de skin appliqué, ou nil
+local current = nil       -- index of the applied skin, or nil
 
 local function ApplySkin(n)
     local mesh, err = GetMesh()
@@ -225,7 +225,7 @@ local function ApplySkin(n)
     if not slots then return false, err2 end
     RememberOriginal(slots)
 
-    -- Résout les 3 matériaux du skin demandé.
+    -- Resolves the 3 materials of the requested skin.
     local mats = {}
     for _, p in ipairs(PARTS) do
         local path = SKIN_BASE .. n .. "/" .. p.asset .. n
@@ -265,30 +265,30 @@ local function ResetSkin()
 end
 
 -- ============================================================================
---  BOB — le skin "Marcel Bob"
+--  BOB — the "Marcel Bob" skin
 --
---  Le spinner DA_Skin_Bob_Spinner (orphelin, cf. en-tête) annonce un skin
---  "Marcel Bob". Les assets correspondants existent bien :
---      MI_BobSkin_Mustache / MM_Bob_Mustache   (matériaux)
---      SKEL_Bob_Mime                            (mesh dédié)
---  contre MI_BobSkin_body / SKEL_Bob pour la version par défaut.
---  => Marcel Bob = Bob en mime moustachu.
+--  The DA_Skin_Bob_Spinner spinner (orphan, see header) announces a
+--  "Marcel Bob" skin. The corresponding assets do exist:
+--      MI_BobSkin_Mustache / MM_Bob_Mustache   (materials)
+--      SKEL_Bob_Mime                            (dedicated mesh)
+--  versus MI_BobSkin_body / SKEL_Bob for the default version.
+--  => Marcel Bob = Bob as a mustachioed mime.
 --
---  Par défaut on ne change QUE les matériaux (réversible, sans risque pour
---  l'animation). L'échange de mesh est derrière 'skin bob mime', explicite :
---  SKEL_Bob_Mime devrait partager SKEL_Bob_Skeleton, mais ce n'est pas vérifié.
+--  By default we change ONLY the materials (reversible, no risk to the
+--  animation). The mesh swap is behind 'skin bob mime', explicit:
+--  SKEL_Bob_Mime should share SKEL_Bob_Skeleton, but this is not verified.
 -- ============================================================================
 local BOB_BASE    = "/Game/Art/Character/Bob/"
 local BOB_CLASSES = { "BP_Bob_Critter_C", "BP_Bob_Critter_Lava_C", "BP_Bob_Critter_Waste_C" }
 
 local bobOriginalMats = nil     -- { [actorFullName] = { [slot] = mat } }
 local bobOriginalMesh = nil     -- { [actorFullName] = skinnedAsset }
-local bobMode         = nil     -- nil | "mime" | "standard" (pour le verrou)
+local bobMode         = nil     -- nil | "mime" | "standard" (for the lock)
 
--- ⚠️ DÉDUPLICATION OBLIGATOIRE : BP_Bob_Critter_Lava_C et _Waste_C HÉRITENT de
--- BP_Bob_Critter_C, donc FindAllOf sur la classe parente remonte aussi les
--- enfants. Sans ce filtre on traite le même acteur plusieurs fois (constaté en
--- jeu : "2 Bob trouvés" alors qu'il n'y en avait qu'un).
+-- ⚠️ DEDUPLICATION MANDATORY: BP_Bob_Critter_Lava_C and _Waste_C INHERIT from
+-- BP_Bob_Critter_C, so FindAllOf on the parent class also returns the
+-- children. Without this filter we process the same actor several times (seen
+-- in game: "2 Bob found" when there was only one).
 local function GetBobActors()
     local out, seen = {}, {}
     for _, cls in ipairs(BOB_CLASSES) do
@@ -309,7 +309,7 @@ local function GetBobMesh(actor)
     local m
     pcall(function() m = actor.Mesh end)
     if okObj(m) then return m end
-    -- Repli : premier SkeletalMeshComponent trouvé sur l'acteur.
+    -- Fallback: first SkeletalMeshComponent found on the actor.
     pcall(function()
         local comps = actor:K2_GetComponentsByClass(StaticFindObject("/Script/Engine.SkeletalMeshComponent"))
         if comps then pcall(function() for _, c in pairs(comps) do if okObj(c) then m = c break end end end) end
@@ -317,22 +317,22 @@ local function GetBobMesh(actor)
     return okObj(m) and m or nil
 end
 
--- ⚠️ LEÇON DU TEST EN JEU (22/07) : la structure des slots de Bob est
---      [0] MI_GlassSimple_EyeBob            -> yeux
---      [1] MI_BobSkin_body / MI_CharacterEnemy_Critter_<élément>  -> CORPS
---      [2] MM_Bob_Mustache                  -> MOUSTACHE (section de mesh dédiée)
--- MI_BobSkin_Mustache est donc le matériau DE LA MOUSTACHE, pas un skin de corps.
--- L'appliquer au corps ne donne rien de cohérent (testé, résultat aberrant).
--- « Marcel Bob » = le MESH SKEL_Bob_Mime, pas un échange de matériau.
+-- ⚠️ LESSON FROM IN-GAME TESTING (22/07): Bob's slot layout is
+--      [0] MI_GlassSimple_EyeBob            -> eyes
+--      [1] MI_BobSkin_body / MI_CharacterEnemy_Critter_<element>  -> BODY
+--      [2] MM_Bob_Mustache                  -> MUSTACHE (dedicated mesh section)
+-- MI_BobSkin_Mustache is therefore the MUSTACHE material, not a body skin.
+-- Applying it to the body gives nothing coherent (tested, nonsensical result).
+-- "Marcel Bob" = the SKEL_Bob_Mime MESH, not a material swap.
 --
---   mode "mime"     -> échange le mesh vers SKEL_Bob_Mime (le vrai Marcel Bob)
---   mode "standard" -> repose le corps sur MI_BobSkin_body (normalise une
---                      variante élémentaire vers le Bob de base)
--- keepMats = true -> après l'échange de mesh, on REPOSE les matériaux qui étaient
--- en place avant (les MID paramétrés par le jeu), au lieu de purger les overrides.
--- Hypothèse testée : MI_BobSkin_body brut rend NOIR parce que ses paramètres sont
--- injectés à l'exécution par le jeu ; les MID d'origine, eux, sont complets.
--- Le squelette est partagé (SKEL_Bob_Skeleton), donc l'échange est légitime.
+--   mode "mime"     -> swaps the mesh to SKEL_Bob_Mime (the real Marcel Bob)
+--   mode "standard" -> puts the body back on MI_BobSkin_body (normalizes an
+--                      elemental variant back to the base Bob)
+-- keepMats = true -> after the mesh swap, we RESTORE the materials that were
+-- in place before (the MIDs parameterized by the game), instead of purging the overrides.
+-- Tested hypothesis: raw MI_BobSkin_body renders BLACK because its parameters are
+-- injected at runtime by the game; the original MIDs, on the other hand, are complete.
+-- The skeleton is shared (SKEL_Bob_Skeleton), so the swap is legitimate.
 local function ApplyBobSkin(mode, alsoMesh, keepMats)
     local actors = GetBobActors()
     if #actors == 0 then return false, "aucun Bob trouvé (il n'est pas chargé dans cette zone ?)" end
@@ -353,7 +353,7 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
             local n = 0
             pcall(function() n = comp:GetNumMaterials() end)
 
-            if not bobOriginalMats[key] then       -- mémorise avant de toucher
+            if not bobOriginalMats[key] then       -- remember before touching
                 bobOriginalMats[key] = {}
                 for i = 0, n - 1 do
                     local cur
@@ -363,14 +363,14 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
                 pcall(function() bobOriginalMesh[key] = comp:GetSkinnedAsset() end)
             end
 
-            -- ⚠️ Les matériaux en place sont des MID_ créés à l'exécution par le
-            -- jeu (variable DynamicMaterials du pawn) : leurs noms sont
-            -- "MID_<materiau>_<numero>", PAS le nom de l'asset. Chercher
-            -- "BobSkin" ne matchait donc rien (constaté en jeu).
-            -- Règle retenue : on remplace tout SAUF les yeux et la moustache,
-            -- qui sont des sections de mesh distinctes à conserver.
-            -- Matériaux : uniquement en mode "standard", et uniquement sur le
-            -- CORPS (ni les yeux, ni la moustache, qui sont des sections dédiées).
+            -- ⚠️ The materials in place are MID_ created at runtime by the
+            -- game (the pawn's DynamicMaterials variable): their names are
+            -- "MID_<material>_<number>", NOT the asset name. Searching for
+            -- "BobSkin" therefore matched nothing (seen in game).
+            -- Rule adopted: we replace everything EXCEPT the eyes and the mustache,
+            -- which are distinct mesh sections to keep.
+            -- Materials: only in "standard" mode, and only on the
+            -- BODY (neither the eyes nor the mustache, which are dedicated sections).
             if mat then
                 for i = 0, n - 1 do
                     local cur
@@ -391,9 +391,9 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
                 local before = "?"
                 pcall(function() before = ShortName(comp:GetSkinnedAsset()) end)
                 local called = pcall(function() comp:SetSkinnedAssetAndUpdate(mesh, true) end)
-                -- ⚠️ RELECTURE OBLIGATOIRE : SetSkinnedAssetAndUpdate ne lève PAS
-                -- d'erreur si le mesh est refusé (squelette incompatible, etc.).
-                -- Un appel "réussi" ne prouve donc rien — seule la relecture le fait.
+                -- ⚠️ READ-BACK MANDATORY: SetSkinnedAssetAndUpdate does NOT raise
+                -- an error if the mesh is rejected (incompatible skeleton, etc.).
+                -- A "successful" call therefore proves nothing — only the read-back does.
                 local after = "?"
                 pcall(function() after = ShortName(comp:GetSkinnedAsset()) end)
                 log("    mesh : " .. before .. " -> " .. after
@@ -402,21 +402,21 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
                     log("    !! le mesh N'A PAS CHANGÉ côté données : squelette incompatible,")
                     log("       ou le jeu le réimpose. Essaie 'skin lock'.")
                 else
-                    -- ⚠️ Après un échange de mesh, les OVERRIDES de matériaux posés
-                    -- sur les anciens index RESTENT en place. Comme la nouvelle
-                    -- géométrie n'a pas la même découpe en sections, des slots se
-                    -- retrouvent avec un matériau inadapté ou vide -> rendu NOIR
-                    -- (constaté en jeu le 22/07 sur la crinière).
-                    -- Correctif : reposer les matériaux que le mesh déclare lui-même.
-                    -- Lire USkeletalMesh:GetMaterials() ne donne rien d'exploitable
-                    -- ici (tableau de structs FSkeletalMaterial : l'indexation
-                    -- échoue depuis Lua, testé -> 0 récupéré).
-                    -- On PURGE donc les overrides : sans override, le composant
-                    -- retombe sur les matériaux que le mesh porte nativement.
+                    -- ⚠️ After a mesh swap, the material OVERRIDES set on the
+                    -- old indices STAY in place. Since the new geometry does not
+                    -- have the same section split, some slots end up with an
+                    -- unsuitable or empty material -> BLACK rendering
+                    -- (seen in game on 22/07 on the mane).
+                    -- Fix: restore the materials the mesh declares itself.
+                    -- Reading USkeletalMesh:GetMaterials() gives nothing usable
+                    -- here (array of FSkeletalMaterial structs: indexing
+                    -- fails from Lua, tested -> 0 retrieved).
+                    -- So we PURGE the overrides: without an override, the component
+                    -- falls back to the materials the mesh carries natively.
                     local cleared, nn = 0, 0
                     pcall(function() nn = comp:GetNumMaterials() end)
                     if keepMats and bobOriginalMats[key] then
-                        -- On repose les MID d'origine sur la nouvelle géométrie.
+                        -- We restore the original MIDs onto the new geometry.
                         for i = 0, nn - 1 do
                             local om = bobOriginalMats[key][i]
                             if om and pcall(function() comp:SetMaterial(i, om) end) then
@@ -447,9 +447,9 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
     return true, touched .. " Bob" .. (slots > 0 and (", " .. slots .. " slot(s)") or "") .. (mesh and " + mesh mime" or "")
 end
 
--- ⚠️ La mémoire d'origine disparaît si l'état Lua du mod est rechargé (recopie
--- de main.lua en cours de partie). On sait cependant reposer le mesh de base
--- sans elle : SKEL_Bob est un asset, on le résout directement.
+-- ⚠️ The original memory is lost if the mod's Lua state is reloaded (copying
+-- main.lua over during a session). We can, however, restore the base mesh
+-- without it: SKEL_Bob is an asset, we resolve it directly.
 local function ResetBob()
     local fallbackMesh = Resolve(BOB_BASE .. "SKEL_Bob")
     if not bobOriginalMats then
@@ -485,17 +485,17 @@ local function ResetBob()
 end
 
 -- ============================================================================
---  REMPLACER LE MODÈLE DE ONE par n'importe quel mesh DÉJÀ DANS LE JEU
+--  REPLACE ONE'S MODEL with any mesh ALREADY IN THE GAME
 --
---  Même technique que pour Bob : SetSkinnedAssetAndUpdate + relecture + purge
---  des overrides. Fonctionne parce que les assets sont déjà cuits et chargés.
+--  Same technique as for Bob: SetSkinnedAssetAndUpdate + read-back + purge
+--  of the overrides. Works because the assets are already cooked and loaded.
 --
---  ⚠️ LIMITE DE SQUELETTE : One utilise SKEL_Hero_facial_Skeleton. Un mesh bâti
---  sur un AUTRE squelette (Bob, Rahne, ennemis…) sera rendu, mais l'animation
---  ne suivra pas : Unreal remappe les os PAR NOM, donc si les noms diffèrent le
---  modèle reste figé, en T-pose ou déformé. Seul SK_Hero_facial_optimization
---  partage le squelette de One (et lui ressemble donc trait pour trait).
---  Autrement dit : c'est à essayer, pas garanti. 'skin mesh reset' rétablit.
+--  ⚠️ SKELETON LIMITATION: One uses SKEL_Hero_facial_Skeleton. A mesh built
+--  on ANOTHER skeleton (Bob, Rahne, enemies…) will be rendered, but the animation
+--  won't follow: Unreal remaps bones BY NAME, so if the names differ the
+--  model stays frozen, in T-pose or deformed. Only SK_Hero_facial_optimization
+--  shares One's skeleton (and therefore looks just like him feature for feature).
+--  In other words: it's worth trying, not guaranteed. 'skin mesh reset' restores.
 -- ============================================================================
 local MESHES = {
     { "bob",       "/Game/Art/Character/Bob/SKEL_Bob",                          "Bob" },
@@ -507,8 +507,8 @@ local MESHES = {
     { "kheleb",    "/Game/Art/Character/Kheleb/SKEL_Kheleb",                    "Kheleb" },
     { "ranged",    "/Game/Art/Character/Ranged/SKEL_Ranged",                    "Ranged" },
     { "rusher",    "/Game/Art/Character/Rusher/SKEL_Rusher",                    "Rusher" },
-    -- ⚠️ SK_BungeeMan ne fait que 12 Ko : ce N'EST PAS le mesh (l'appliquer a mis
-    -- le personnage à nil, donc invisible). Le vrai est SKM_BungeeMan (696 Ko).
+    -- ⚠️ SK_BungeeMan is only 12 KB: it is NOT the mesh (applying it set the
+    -- character to nil, hence invisible). The real one is SKM_BungeeMan (696 KB).
     { "bungee",    "/Game/Art/Character/BungeeMan/SKM_BungeeMan",               "BungeeMan" },
     { "wonder",    "/Game/Art/Character/LastWonder/SKEL_LastWonder_Step01",     "Last Wonder" },
     { "wonder2",   "/Game/Art/Character/LastWonder/SKEL_LastWonder_Step02",     "Last Wonder (2)" },
@@ -518,11 +518,11 @@ local MESHES = {
     { "cine",      "/Game/Art/Character/Builder/SK_BuilderCINEMATIC",           "Builder (cinématique)" },
     { "mannequin", "/Game/SoStylized/Demo/Pawn/Mannequin/Character/Mesh/SK_Mannequin", "Mannequin Unreal" },
     { "hat",       "/Game/Art/Character/Rahne/SK_Rahne_hat",                    "Chapeau de Rahne (gag)" },
-    -- ⚠️ ASSET EXTERNE : n'existe QUE si le pak custom est monté dans Content/Paks/.
-    -- Resolve() echouera proprement tant que ce n'est pas le cas.
-    -- Chemin releve via "Copier la reference" dans l'editeur UE 5.6 :
+    -- ⚠️ EXTERNAL ASSET: exists ONLY if the custom pak is mounted in Content/Paks/.
+    -- Resolve() will fail cleanly as long as that is not the case.
+    -- Path captured via "Copy reference" in the UE 5.6 editor:
     --   /Script/Engine.SkeletalMesh'/Game/Test_Alien-Animal-Blender_2_81.Test_Alien-Animal-Blender_2_81'
-    -- Attention au melange tirets/underscores : Test_Alien-Animal-Blender_2_81
+    -- Mind the mix of dashes/underscores: Test_Alien-Animal-Blender_2_81
     { "alien",     "/Game/Test_Alien-Animal-Blender_2_81",                      "Alien Animal (pak custom)" },
     { "one",       "/Game/Art/Character/Hero/Hero_Facial_Final/SK_Hero_facial", "One (d'origine)" },
     { "hero",      "/Game/Art/Character/Hero/Hero_Facial_Final/SK_Hero_facial", "One (alias)" },
@@ -530,25 +530,25 @@ local MESHES = {
 
 local oneOriginalMesh = nil
 
--- ⚠️ DÉCLARATIONS ANTICIPÉES : SwapOneMesh (plus bas) appelle ces fonctions, mais
--- elles sont DÉFINIES APRÈS lui. Sans ces lignes, Lua les compile comme des
--- globales et elles valent nil à l'exécution
--- ("attempt to call a nil value (global 'HideStrayComponents')", constaté le 22/07).
+-- ⚠️ FORWARD DECLARATIONS: SwapOneMesh (below) calls these functions, but
+-- they are DEFINED AFTER it. Without these lines, Lua compiles them as
+-- globals and they are nil at runtime
+-- ("attempt to call a nil value (global 'HideStrayComponents')", seen on 22/07).
 local ListPawnMeshComponents, ClassOf, HideStrayComponents, UnhideStrayComponents
 local HideAttachedActors, UnhideAttachedActors
 local HideActorsByClass, ListNearbyActors, KNOWN_ATTACHMENTS
--- Tables d'etat : declarees ICI car SwapOneMesh (plus bas) les utilise,
--- alors que leur section d'origine vient apres lui.
+-- State tables: declared HERE because SwapOneMesh (below) uses them,
+-- while their original section comes after it.
 local hidden, hiddenActors = {}, {}
 local HandleOverlay
--- Module OUTLINE (silhouette noire) : declare ICI car HandleOverlay et la
--- boucle d'entretien les appellent avant leur definition (piege g).
+-- OUTLINE module (black outline): declared HERE because HandleOverlay and the
+-- maintenance loop call them before their definition (pitfall g).
 local GetOverlayComp, CollectOverlaySMC, ReadState, DumpState
 local KillOutline, RestoreOutline, DiagOutline
 local outlineLocked = false
-local meshSwapTarget = nil     -- mesh actuellement forcé, nil si aucun
+local meshSwapTarget = nil     -- mesh currently forced, nil if none
 
--- Retrouve une entrée par son alias (colonne 1), puis par son libellé.
+-- Finds an entry by its alias (column 1), then by its label.
 local function FindEntry(list, key)
     key = string.lower(key or "")
     if key == "" then return nil end
@@ -582,8 +582,8 @@ local function SwapOneMesh(entry)
         return false, "le mesh n'a PAS changé (refusé par le moteur)"
     end
 
-    -- Purge des overrides, sinon les matériaux de One restent collés sur la
-    -- nouvelle géométrie et certaines sections rendent noir (cf. Bob).
+    -- Purge the overrides, otherwise One's materials stay stuck on the
+    -- new geometry and some sections render black (cf. Bob).
     local nn = 0
     pcall(function() nn = mesh:GetNumMaterials() end)
     for i = 0, nn - 1 do pcall(function() mesh:SetMaterial(i, nil) end) end
@@ -594,38 +594,38 @@ local function SwapOneMesh(entry)
         log("    [" .. i .. "] " .. ShortName(cur))
     end
 
-    -- Cheveux, bâton… : composants du pawn ET acteurs attachés (les cheveux sont
-    -- un ChildActor, invisible pour K2_GetComponentsByClass).
-    -- ⚠️ LE « ONE NOIR » QUI SUIT LE JOUEUR : le pawn porte un
-    -- BP_OverlayMeshComponent (cf. UOverlayMeshComponent dans le binaire) qui rend
-    -- une COPIE du personnage. Il reste sur SK_Hero_facial après l'échange, d'où
-    -- un double sombre collé au joueur (constaté 22/07).
-    -- On lui applique le MÊME mesh, et à défaut on le masque.
+    -- Hair, stick…: pawn components AND attached actors (the hair is
+    -- a ChildActor, invisible to K2_GetComponentsByClass).
+    -- ⚠️ THE "BLACK ONE" THAT FOLLOWS THE PLAYER: the pawn carries a
+    -- BP_OverlayMeshComponent (cf. UOverlayMeshComponent in the binary) that renders
+    -- a COPY of the character. It stays on SK_Hero_facial after the swap, hence
+    -- a dark double stuck to the player (seen 22/07).
+    -- We apply the SAME mesh to it, and failing that we hide it.
     HandleOverlay(target)
 
     local h = HideStrayComponents(mesh)
     local a = HideAttachedActors() + HideActorsByClass(KNOWN_ATTACHMENTS, true)
-    meshSwapTarget = target        -- active l'entretien permanent (voir la boucle)
+    meshSwapTarget = target        -- enables permanent maintenance (see the loop)
     return true, entry[3] .. " appliqué (" .. nn .. " slots, "
                  .. h .. " composant(s) + " .. a .. " acteur(s) masqué(s))"
 end
 
 -- ---------------------------------------------------------------------------
---  Composants annexes de One (cheveux, bâton…)
+--  One's ancillary components (hair, stick…)
 --
---  Ce sont des composants DISTINCTS du mesh principal, attachés à des os du
---  squelette de One. Après un échange de modèle, ces os n'existent plus sur la
---  nouvelle géométrie : les composants retombent à l'origine du pawn et restent
---  visibles AUX PIEDS du joueur (constaté en jeu le 22/07 avec Rahne).
---  On les masque donc, et 'skin mesh reset' les réaffiche.
+--  These are components DISTINCT from the main mesh, attached to bones of
+--  One's skeleton. After a model swap, those bones no longer exist on the
+--  new geometry: the components fall back to the pawn's origin and stay
+--  visible AT THE PLAYER'S FEET (seen in game on 22/07 with Rahne).
+--  So we hide them, and 'skin mesh reset' shows them again.
 -- ---------------------------------------------------------------------------
--- (hidden : declaree plus haut)
+-- (hidden: declared above)
 
--- ⚠️ Interroger SkeletalMeshComponent + StaticMeshComponent NE SUFFIT PAS :
--- les cheveux d'UE5 sont un GroomComponent, et d'autres accessoires peuvent
--- utiliser encore d'autres classes (constaté le 22/07 : cheveux et bâton de One
--- restaient visibles alors que rien n'était masqué).
--- UPrimitiveComponent est la classe mère de TOUT ce qui se rend à l'écran.
+-- ⚠️ Querying SkeletalMeshComponent + StaticMeshComponent IS NOT ENOUGH:
+-- UE5's hair is a GroomComponent, and other accessories may
+-- use yet other classes (seen on 22/07: One's hair and stick
+-- stayed visible even though nothing was hidden).
+-- UPrimitiveComponent is the parent class of EVERYTHING that renders on screen.
 ListPawnMeshComponents = function()
     local pawn = GetPawn()
     if not pawn then return {} end
@@ -643,7 +643,7 @@ ListPawnMeshComponents = function()
         end
     end
 
-    -- Voie 1 : API TArray (le retour est un TArray, pas une table Lua).
+    -- Path 1: TArray API (the return is a TArray, not a Lua table).
     local n = 0
     pcall(function() n = comps:GetArrayNum() end)
     if n and n > 0 then
@@ -653,7 +653,7 @@ ListPawnMeshComponents = function()
             add(c)
         end
     else
-        -- Voie 2 : repli, au cas où UE4SS rendrait une table classique.
+        -- Path 2: fallback, in case UE4SS returns a classic table.
         pcall(function()
             for _, c in pairs(comps) do add(c) end
         end)
@@ -661,7 +661,7 @@ ListPawnMeshComponents = function()
     return out
 end
 
--- Nom de classe d'un composant, pour le diagnostic.
+-- Class name of a component, for diagnostics.
 ClassOf = function(o)
     local n = "?"
     pcall(function() n = o:GetClass():GetFName():ToString() end)
@@ -670,26 +670,26 @@ ClassOf = function(o)
 end
 
 -- ---------------------------------------------------------------------------
---  ACTEURS ATTACHÉS (cheveux, bâton…)
+--  ATTACHED ACTORS (hair, stick…)
 --
---  ⚠️ Les cheveux de One ne sont PAS un composant du pawn : c'est un
---  ChildActorComponent (`BP_Bigoudi`, cf. Art/Character/Hair/Bigoudi/), donc un
---  ACTEUR À PART. K2_GetComponentsByClass ne rend que les composants DU PAWN et
---  ne le voit jamais — d'où « 0 composant masqué » alors que les cheveux
---  restaient à l'écran (22/07).
---  Le jeu fait la même chose lors du passage en forme eau : tout disparaît.
---  On passe donc par GetAttachedActors + SetActorHiddenInGame.
---  (GetChildActor n'est PAS exposé ; SetActorHiddenInGame et GetAttachedActors le sont.)
+--  ⚠️ One's hair is NOT a component of the pawn: it is a
+--  ChildActorComponent (`BP_Bigoudi`, cf. Art/Character/Hair/Bigoudi/), so a
+--  SEPARATE ACTOR. K2_GetComponentsByClass only returns the PAWN's components and
+--  never sees it — hence "0 component hidden" while the hair
+--  stayed on screen (22/07).
+--  The game does the same thing when switching to water form: everything disappears.
+--  So we go through GetAttachedActors + SetActorHiddenInGame.
+--  (GetChildActor is NOT exposed; SetActorHiddenInGame and GetAttachedActors are.)
 -- ---------------------------------------------------------------------------
--- (hiddenActors : declaree plus haut)
+-- (hiddenActors: declared above)
 
--- ⚠️ Ni K2_GetComponentsByClass ni GetAttachedActors ne remontent les cheveux
--- (constaté 22/07 : 0 composant, 0 acteur). BP_Bigoudi est un ChildActor VFX
--- (Art/VFX/Bigoudi/, Niagara NS_Bigoudi) : on le cherche donc par sa CLASSE,
--- ce qui ne dépend d'aucune énumération.
--- Identifiés en jeu (22/07) via 'skin mesh near' :
---   BP_Bigoudi_C = les cheveux (ChildActor VFX)   ✅ masquage confirmé
---   BP_Stick_C   = le bâton de One
+-- ⚠️ Neither K2_GetComponentsByClass nor GetAttachedActors return the hair
+-- (seen 22/07: 0 component, 0 actor). BP_Bigoudi is a VFX ChildActor
+-- (Art/VFX/Bigoudi/, Niagara NS_Bigoudi): so we look for it by its CLASS,
+-- which does not depend on any enumeration.
+-- Identified in game (22/07) via 'skin mesh near':
+--   BP_Bigoudi_C = the hair (VFX ChildActor)   ✅ hiding confirmed
+--   BP_Stick_C   = One's stick
 KNOWN_ATTACHMENTS = { "BP_Bigoudi_C", "BP_Stick_C" }
 
 HideActorsByClass = function(classes, hide)
@@ -712,7 +712,7 @@ HideActorsByClass = function(classes, hide)
     return n
 end
 
--- Découverte : acteurs très proches du joueur (le bâton en fait partie).
+-- Discovery: actors very close to the player (the stick is one of them).
 ListNearbyActors = function(radius)
     local pawn = GetPawn()
     if not pawn then return {} end
@@ -739,37 +739,37 @@ ListNearbyActors = function(radius)
 end
 
 -- ---------------------------------------------------------------------------
---  L'OUTLINE / LA SILHOUETTE NOIRE DE ONE
+--  ONE'S OUTLINE / BLACK SILHOUETTE
 --
---  MÉCANISME RÉEL (établi statiquement le 22/07, cf. .utoc + PDB + decomp) :
---  le contour n'est PAS un overlay material et PAS le custom depth. C'est une
---  COQUE INVERSÉE : au BeginPlay, BP_OverlayMeshComponent DUPLIQUE le mesh du
---  personnage en créant des USkeletalMeshComponent supplémentaires
---  (GenerateSkeletalMeshes), auxquels il applique un MID issu de
---  MM_OutlineOverlay (TwoSided + Masked + Unlit + Thickness… = extrusion de
---  normales, couleur 0x101010, d'où le noir).
+--  ACTUAL MECHANISM (established statically on 22/07, cf. .utoc + PDB + decomp):
+--  the outline is NOT an overlay material and NOT the custom depth. It is an
+--  INVERTED SHELL: at BeginPlay, BP_OverlayMeshComponent DUPLICATES the
+--  character's mesh by creating additional USkeletalMeshComponent
+--  (GenerateSkeletalMeshes), to which it applies a MID derived from
+--  MM_OutlineOverlay (TwoSided + Masked + Unlit + Thickness… = normal
+--  extrusion, color 0x101010, hence the black).
 --
---  POURQUOI L'ANCIEN CODE ÉCHOUAIT (deux causes, la 2e est la vraie) :
---   1. UOverlayMeshComponent dérive de UActorComponent, PAS de USceneComponent :
---      il n'a NI GetChildrenComponents NI SetHiddenInGame. Les pcall
---      « réussissaient » sans rien faire (piège h : un appel sans erreur ne
---      prouve rien).
---   2. SURTOUT : les doubles sont attachés au composant "Mesh" du personnage
---      (K2_AttachToComponent). Ce sont des FRÈRES du composant manager, jamais
---      ses enfants. Descendre son arbre ne pouvait rien trouver.
+--  WHY THE OLD CODE FAILED (two causes, the 2nd is the real one):
+--   1. UOverlayMeshComponent derives from UActorComponent, NOT from USceneComponent:
+--      it has NEITHER GetChildrenComponents NOR SetHiddenInGame. The pcalls
+--      "succeeded" without doing anything (pitfall h: a call without an error
+--      proves nothing).
+--   2. ABOVE ALL: the doubles are attached to the character's "Mesh" component
+--      (K2_AttachToComponent). They are SIBLINGS of the manager component, never
+--      its children. Descending its tree could find nothing.
 --
---  ON AGIT DONC SUR LES SkeletalMeshComponent EUX-MÊMES, collectés par l'UNION
---  de trois sources (aucune n'est garantie peuplée à l'exécution) :
---      ov.SkeletalsOverlay                       (variable Blueprint)
---      ov.OutlineOverlay.SkeletalMeshComponents  (UOverlayMesh natif)
---      ov.StatusOverlay.SkeletalMeshComponents   (UOverlayMesh natif)
+--  SO WE ACT ON THE SkeletalMeshComponent THEMSELVES, collected from the UNION
+--  of three sources (none is guaranteed populated at runtime):
+--      ov.SkeletalsOverlay                       (Blueprint variable)
+--      ov.OutlineOverlay.SkeletalMeshComponents  (native UOverlayMesh)
+--      ov.StatusOverlay.SkeletalMeshComponents   (native UOverlayMesh)
 --
---  ⚠️ Le bytecode Blueprint n'est pas lisible (FModel ne l'exporte pas) : on ne
---  sait pas lequel de ces tableaux est réellement rempli. Les logs de
---  CollectOverlaySMC trancheront au premier essai en jeu.
+--  ⚠️ The Blueprint bytecode is not readable (FModel does not export it): we
+--  don't know which of these arrays is actually filled. The logs from
+--  CollectOverlaySMC will settle it on the first in-game try.
 -- ---------------------------------------------------------------------------
 
--- État SAUVEGARDÉ AVANT toute écriture, pour 'skin outline on'.
+-- State SAVED BEFORE any write, for 'skin outline on'.
 -- outlineSaved.comps = { { smc, vis, hid, cd } }   outlineSaved.ov = { … }
 local outlineSaved = nil
 
@@ -779,8 +779,8 @@ GetOverlayComp = function()
     local ov
     pcall(function() ov = pawn.BP_OverlayMeshComponent end)
     if okObj(ov) then return ov end
-    -- Repli : balayage par nom de classe. Dédup sur GetFullName (piège e :
-    -- FindAllOf / les énumérations remontent aussi les sous-classes).
+    -- Fallback: scan by class name. Dedup on GetFullName (pitfall e:
+    -- FindAllOf / the enumerations also return subclasses).
     local seen = {}
     for _, c in ipairs(ListPawnMeshComponents()) do
         if okObj(c) then
@@ -795,7 +795,7 @@ GetOverlayComp = function()
     return nil
 end
 
--- Union des trois sources, dédupliquée sur GetFullName.
+-- Union of the three sources, deduplicated on GetFullName.
 CollectOverlaySMC = function(ov)
     local out, seen = {}, {}
     local function push(o, src)
@@ -806,7 +806,7 @@ CollectOverlaySMC = function(ov)
         out[#out + 1] = o
         log("      + " .. src .. " : " .. ShortName(o) .. " [" .. (ClassOf(o) or "?") .. "]")
     end
-    -- Les TArray d'UE4SS se lisent GetArrayNum()+[i] ; repli pairs() si besoin.
+    -- UE4SS TArrays are read via GetArrayNum()+[i]; pairs() fallback if needed.
     local function eatArray(arr, src)
         if arr == nil then log("      (" .. src .. " : nil)") return end
         local cnt = 0
@@ -840,9 +840,9 @@ CollectOverlaySMC = function(ov)
     return out
 end
 
--- Relecture d'un composant. Selon la version d'UE4SS la visibilité est exposée
--- en bVisible ou seulement via IsVisible() : on tente les deux. Un "?" dans le
--- log signifie « la relecture n'a rien prouvé », PAS « l'écriture a réussi ».
+-- Read-back of a component. Depending on the UE4SS version, visibility is exposed
+-- as bVisible or only via IsVisible(): we try both. A "?" in the
+-- log means "the read-back proved nothing", NOT "the write succeeded".
 ReadState = function(smc)
     local vis, hid, cd, ass = "?", "?", "?", "?"
     pcall(function() vis = tostring(smc.bVisible) end)
@@ -853,8 +853,8 @@ ReadState = function(smc)
     return vis, hid, cd, ass
 end
 
--- Journalise l'état de la liste et RENVOIE le nombre encore visibles.
--- C'est cette valeur qui décide si on descend d'un cran dans la cascade.
+-- Logs the list's state and RETURNS the number still visible.
+-- It is this value that decides whether we step down a level in the cascade.
 DumpState = function(list, tag)
     local alive = 0
     for _, smc in ipairs(list) do
@@ -872,7 +872,7 @@ DumpState = function(list, tag)
     return alive
 end
 
--- Sauvegarde l'état d'origine UNE SEULE FOIS, avant la première écriture.
+-- Saves the original state ONLY ONCE, before the first write.
 local function SaveOutlineState(ov, smcs)
     if outlineSaved then return end
     outlineSaved = { comps = {}, ov = {} }
@@ -890,7 +890,7 @@ local function SaveOutlineState(ov, smcs)
 end
 
 -- ---------------------------------------------------------------------------
---  DIAGNOSTIC — ne modifie RIEN
+--  DIAGNOSTIC — modifies NOTHING
 -- ---------------------------------------------------------------------------
 DiagOutline = function()
     log("  [outline/diag] ---------------------------------------------")
@@ -921,8 +921,8 @@ DiagOutline = function()
     log("  [outline/diag] " .. #smcs .. " SkeletalMeshComponent d'overlay")
     DumpState(smcs, "diag")
 
-    -- Matériaux portés par les doubles : ce sont des MID_ créés à l'exécution,
-    -- leur nom n'est PAS celui de l'asset MI_OutlineOne (piège f).
+    -- Materials carried by the doubles: these are MID_ created at runtime,
+    -- their name is NOT that of the MI_OutlineOne asset (pitfall f).
     for _, smc in ipairs(smcs) do
         local n = 0
         pcall(function() n = smc:GetNumMaterials() end)
@@ -933,7 +933,7 @@ DiagOutline = function()
         end
     end
 
-    -- Le mesh principal : custom depth = système de ciblage, PAS la silhouette.
+    -- The main mesh: custom depth = targeting system, NOT the silhouette.
     local mesh = GetMesh()
     if okObj(mesh) then
         local v, h, cd, a = ReadState(mesh)
@@ -944,7 +944,7 @@ DiagOutline = function()
         log("      GetOverlayMaterial() = " .. ShortName(ovm) .. "  (écarté : ce n'est pas le mécanisme)")
     end
 
-    -- Tout autre SkeletalMeshComponent du pawn : candidats « doubles ».
+    -- Any other SkeletalMeshComponent of the pawn: "double" candidates.
     local mainFN = okObj(mesh) and Name(mesh) or "?"
     local seen = {}
     for _, c in ipairs(ListPawnMeshComponents()) do
@@ -964,9 +964,9 @@ DiagOutline = function()
 end
 
 -- ---------------------------------------------------------------------------
---  SUPPRESSION — cascade E1 -> E6, chaque étape conditionnée par la RELECTURE
---  de la précédente (piège h). hard=true active l'étape 6, IRRÉVERSIBLE
---  jusqu'au rechargement du niveau.
+--  REMOVAL — cascade E1 -> E6, each step gated by the READ-BACK
+--  of the previous one (pitfall h). hard=true enables step 6, IRREVERSIBLE
+--  until the level is reloaded.
 -- ---------------------------------------------------------------------------
 KillOutline = function(hard)
     local ov = GetOverlayComp()
@@ -978,8 +978,8 @@ KillOutline = function(hard)
     SaveOutlineState(ov, smcs)
     DumpState(smcs, "AVANT")
 
-    -- ÉTAPE 1 — chemin officiel du jeu. UFUNCTION BlueprintCallable, un seul
-    -- paramètre BoolProperty : aucun risque FName/FText (piège c).
+    -- STEP 1 — the game's official path. UFUNCTION BlueprintCallable, a single
+    -- BoolProperty parameter: no FName/FText risk (pitfall c).
     local ok1 = pcall(function() ov:SetOverlayHidden(true) end)
     log("  [outline] E1 SetOverlayHidden(true) appel=" .. tostring(ok1))
     if #smcs > 0 and DumpState(smcs, "E1") == 0 then
@@ -987,10 +987,10 @@ KillOutline = function(hard)
         return #smcs
     end
 
-    -- ÉTAPE 2 — action directe sur chaque double. Réplique littérale de
-    -- UOverlayMesh::Deactivate (decomp : boucle SetVisibility sur le tableau).
-    -- On CONTINUE même si ça prend : TagsChanged / UpdateOverlayByDistance
-    -- peuvent réafficher.
+    -- STEP 2 — direct action on each double. Literal replica of
+    -- UOverlayMesh::Deactivate (decomp: SetVisibility loop over the array).
+    -- We CONTINUE even if it works: TagsChanged / UpdateOverlayByDistance
+    -- may show them again.
     for _, smc in ipairs(smcs) do
         pcall(function() smc:SetVisibility(false, true) end)
         pcall(function() smc:SetHiddenInGame(true, true) end)
@@ -999,17 +999,17 @@ KillOutline = function(hard)
     log("  [outline] E2 SetVisibility/SetHiddenInGame sur " .. #smcs .. " composant(s)")
     if #smcs > 0 then DumpState(smcs, "E2") end
 
-    -- ÉTAPE 3 — cull par distance. ⚠️ le nom de la variable Blueprint CONTIENT
-    -- DES ESPACES : la notation crochets est OBLIGATOIRE.
+    -- STEP 3 — distance cull. ⚠️ the Blueprint variable's name CONTAINS
+    -- SPACES: the bracket notation is MANDATORY.
     pcall(function() ov:SetMaxDrawDistance(1.0) end)
     pcall(function() ov["Max Draw Distance"] = 1.0 end)
     local mdd = "?"
     pcall(function() mdd = tostring(ov["Max Draw Distance"]) end)
     log("  [outline] E3 'Max Draw Distance' relu = " .. mdd)
 
-    -- ÉTAPE 4 — bloquer la RÉGÉNÉRATION (tick -> UpdateOverlayByDistance).
-    -- ⚠️ On n'appelle JAMAIS GenerateSkeletalMeshes (paramètre FName, et ça
-    -- recréerait les doubles) ni UpdateOverlayParameters avec une string brute.
+    -- STEP 4 — block the REGENERATION (tick -> UpdateOverlayByDistance).
+    -- ⚠️ We NEVER call GenerateSkeletalMeshes (FName parameter, and it
+    -- would recreate the doubles) nor UpdateOverlayParameters with a raw string.
     pcall(function() ov:SetComponentTickEnabled(false) end)
     pcall(function() ov.OwnerIsOne = false end)
     local tick, one = "?", "?"
@@ -1017,9 +1017,9 @@ KillOutline = function(hard)
     pcall(function() one = tostring(ov.OwnerIsOne) end)
     log("  [outline] E4 bTickEnabled=" .. tick .. "  OwnerIsOne=" .. one)
 
-    -- ÉTAPE 5 — filet de sécurité : tout SkeletalMeshComponent du pawn qui n'est
-    -- PAS le Mesh principal et qui est encore visible. C'est l'étape décisive si
-    -- les trois tableaux sont vides.
+    -- STEP 5 — safety net: any SkeletalMeshComponent of the pawn that is
+    -- NOT the main Mesh and is still visible. This is the decisive step if
+    -- the three arrays are empty.
     local pawn, mainMesh = GetPawn(), nil
     if pawn then pcall(function() mainMesh = pawn.Mesh end) end
     local mainFN = okObj(mainMesh) and Name(mainMesh) or "?"
@@ -1047,9 +1047,9 @@ KillOutline = function(hard)
     end
     log("  [outline] E5 " .. extra .. " composant(s) supplémentaire(s) traité(s)")
 
-    -- ÉTAPE 6 — NUCLÉAIRE, uniquement sur 'skin outline hard'. Vide la géométrie
-    -- des doubles, détruit les composants, puis neutralise la graine matériau
-    -- pour que RegenerateMID ne recrée rien d'opaque. IRRÉVERSIBLE.
+    -- STEP 6 — NUCLEAR, only on 'skin outline hard'. Empties the geometry
+    -- of the doubles, destroys the components, then neutralizes the material seed
+    -- so that RegenerateMID recreates nothing opaque. IRREVERSIBLE.
     if hard then
         for _, smc in ipairs(smcs) do
             pcall(function() smc:SetSkinnedAssetAndUpdate(nil, true) end)
@@ -1075,8 +1075,8 @@ KillOutline = function(hard)
 end
 
 -- ---------------------------------------------------------------------------
---  RESTAURATION — remet l'état mémorisé AVANT la première suppression.
---  Sans effet sur ce que l'étape 6 a détruit (prévenir l'utilisateur).
+--  RESTORATION — restores the state memorized BEFORE the first removal.
+--  No effect on what step 6 destroyed (warn the user).
 -- ---------------------------------------------------------------------------
 RestoreOutline = function()
     if not outlineSaved then return false, "rien à restaurer (outline jamais supprimé)" end
@@ -1119,9 +1119,9 @@ RestoreOutline = function()
     return true, n .. " composant(s) restauré(s)"
 end
 
--- Compatibilité : l'échange de mesh et la boucle d'entretien appellent encore
--- HandleOverlay. Aligner les doubles sur le nouveau mesh ne marchait pas
--- (ils sont créés une fois au BeginPlay depuis SK_Hero_facial) : on supprime.
+-- Compatibility: the mesh swap and the maintenance loop still call
+-- HandleOverlay. Aligning the doubles onto the new mesh did not work
+-- (they are created once at BeginPlay from SK_Hero_facial): we remove them.
 HandleOverlay = function(_target)
     return KillOutline(false)
 end
@@ -1130,7 +1130,7 @@ HideAttachedActors = function()
     local pawn = GetPawn()
     if not pawn then return 0 end
     local list
-    -- Selon les builds, UE4SS rend la sortie soit en retour, soit via l'out param.
+    -- Depending on the build, UE4SS returns the output either as a return value or via the out param.
     pcall(function() list = pawn:GetAttachedActors(nil, true, true) end)
     if not list then pcall(function() list = pawn:GetAttachedActors() end) end
     if not list then return 0 end
@@ -1172,7 +1172,7 @@ HideStrayComponents = function(mainMesh)
     for _, c in ipairs(ListPawnMeshComponents()) do
         if Name(c) ~= Name(mainMesh) then
             local visible = true
-            -- bHiddenInGame est une PROPRIÉTÉ (accès par point), pas une méthode.
+            -- bHiddenInGame is a PROPERTY (dot access), not a method.
             pcall(function() visible = not c.bHiddenInGame end)
             if visible then
                 if pcall(function() c:SetHiddenInGame(true, true) end) then
@@ -1209,7 +1209,7 @@ local function ResetOneMesh()
     local nn = 0
     pcall(function() nn = mesh:GetNumMaterials() end)
     for i = 0, nn - 1 do pcall(function() mesh:SetMaterial(i, nil) end) end
-    meshSwapTarget = nil        -- coupe l'entretien permanent
+    meshSwapTarget = nil        -- stops the permanent maintenance
     HideActorsByClass(KNOWN_ATTACHMENTS, false)
     local u = UnhideStrayComponents()
     local ua = UnhideAttachedActors()
@@ -1218,16 +1218,16 @@ local function ResetOneMesh()
 end
 
 -- ---------------------------------------------------------------------------
---  Verrou : le pawn a une variable DynamicMaterials et le jeu peut réappliquer
---  ses propres matériaux (changement de forme, respawn…). Cette boucle remet
---  le skin choisi. AUCUN Ar ici.
+--  Lock: the pawn has a DynamicMaterials variable and the game can reapply
+--  its own materials (form change, respawn…). This loop restores
+--  the chosen skin. NO Ar here.
 -- ---------------------------------------------------------------------------
 local locked = false
 
--- ⚠️ Masquer UNE FOIS ne tient pas : BP_Bigoudi est un ChildActor que le jeu
--- RECRÉE (respawn, changement de forme, streaming), et l'overlay se réaligne
--- sur le mesh d'origine. D'où un résultat qui « marche une fois sur deux »
--- (constaté 22/07). On réapplique donc tant qu'un échange est actif.
+-- ⚠️ Hiding ONCE does not hold: BP_Bigoudi is a ChildActor that the game
+-- RECREATES (respawn, form change, streaming), and the overlay realigns
+-- onto the original mesh. Hence a result that "works every other time"
+-- (seen 22/07). So we reapply as long as a swap is active.
 local lastAttachSig = nil
 LoopAsync(1500, function()
     if meshSwapTarget then
@@ -1248,8 +1248,8 @@ LoopAsync(1500, function()
     return false
 end)
 
--- Verrou d'outline : si le jeu réimpose la silhouette (changement de forme,
--- respawn, TagsChanged…), on relance la cascade. AUCUN `Ar` ici (piège a).
+-- Outline lock: if the game reimposes the silhouette (form change,
+-- respawn, TagsChanged…), we relaunch the cascade. NO `Ar` here (pitfall a).
 local lastOutlineSig = nil
 LoopAsync(1500, function()
     if outlineLocked then
@@ -1273,7 +1273,7 @@ LoopAsync(2000, function()
             ExecuteInGameThread(function()
                 quietly(function()
                     if current then ApplySkin(current) end
-                    -- Bob aussi : si le jeu reimpose son mesh/materiau, on le remet.
+                    -- Bob too: if the game reimposes its mesh/material, we restore it.
                     if bobMode then ApplyBobSkin(bobMode, bobMode == "mime") end
                 end)
             end)
@@ -1283,7 +1283,7 @@ LoopAsync(2000, function()
 end)
 
 -- ---------------------------------------------------------------------------
---  Tentative "menu" conservée pour mémoire (sans effet sur l'affichage)
+--  "menu" attempt kept for the record (no effect on the display)
 -- ---------------------------------------------------------------------------
 local BASE_OPT = "/Game/Game/Option/DataAssets/Gameplay/Skin/"
 
@@ -1308,7 +1308,7 @@ local function AttachBobSpinner()
 end
 
 -- ---------------------------------------------------------------------------
---  Commande console
+--  Console command
 -- ---------------------------------------------------------------------------
 RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar)
     local p = Parameters or {}
@@ -1328,7 +1328,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
     if key == "reset" then
         say(Ar, "restauration des matériaux d'origine…")
         locked = false
-        ExecuteInGameThread(function()          -- pas de Ar ici
+        ExecuteInGameThread(function()          -- no Ar here
             local ok, msg = ResetSkin()
             log("reset -> " .. tostring(msg))
         end)
@@ -1345,7 +1345,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
     if key == "menu" then
         say(Ar, "tentative de branchement du spinner de Bob…")
         say(Ar, "(rappel : la liste du menu est figée à sa création, l'UI ne bougera pas)")
-        ExecuteInGameThread(function()          -- pas de Ar ici
+        ExecuteInGameThread(function()          -- no Ar here
             local ok, msg = AttachBobSpinner()
             log("menu -> " .. tostring(msg))
         end)
@@ -1376,7 +1376,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
             local cls = p[3]
             if not cls then say(Ar, "usage : skin mesh hide <NomDeClasse_C>"); return true end
             say(Ar, "masquage de tous les " .. cls .. "…")
-            ExecuteInGameThread(function()          -- pas de Ar ici
+            ExecuteInGameThread(function()          -- no Ar here
                 log("masqués : " .. HideActorsByClass({ cls }, true))
             end)
             return true
@@ -1393,14 +1393,14 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         end
         if sub == "show" then
             say(Ar, "réaffichage des composants masqués…")
-            ExecuteInGameThread(function()          -- pas de Ar ici
+            ExecuteInGameThread(function()          -- no Ar here
                 log("réaffichés : " .. UnhideStrayComponents())
             end)
             return true
         end
         if sub == "reset" or sub == "off" then
             say(Ar, "restauration du modèle de One…")
-            ExecuteInGameThread(function()          -- pas de Ar ici
+            ExecuteInGameThread(function()          -- no Ar here
                 local ok, msg = ResetOneMesh()
                 log("mesh reset -> " .. tostring(msg))
             end)
@@ -1409,7 +1409,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         local entry = FindEntry(MESHES, sub)
         if not entry then say(Ar, "inconnu : '" .. sub .. "' — tape 'skin mesh list'"); return true end
         say(Ar, "remplacement du modèle de One par " .. entry[3] .. "…")
-        ExecuteInGameThread(function()              -- pas de Ar ici
+        ExecuteInGameThread(function()              -- no Ar here
             local ok, msg = SwapOneMesh(entry)
             log("skin mesh " .. sub .. " -> " .. (ok and msg or ("ÉCHEC : " .. tostring(msg))))
         end)
@@ -1420,7 +1420,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         local sub = (p[2] and string.lower(p[2])) or ""
         if sub == "off" or sub == "reset" then
             say(Ar, "restauration de Bob…")
-            ExecuteInGameThread(function()          -- pas de Ar ici
+            ExecuteInGameThread(function()          -- no Ar here
                 local ok, msg = ResetBob()
                 log("bob off -> " .. tostring(msg))
             end)
@@ -1444,22 +1444,22 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
             end
             return true
         end
-        -- 'skin bob'          -> mime (c'est ÇA, Marcel Bob : le mesh)
-        -- 'skin bob standard' -> repose le corps sur MI_BobSkin_body
+        -- 'skin bob'          -> mime (THIS is it, Marcel Bob: the mesh)
+        -- 'skin bob standard' -> puts the body back on MI_BobSkin_body
         if sub == "standard" or sub == "body" then
             say(Ar, "corps de Bob -> MI_BobSkin_body…")
-            ExecuteInGameThread(function()          -- pas de Ar ici
+            ExecuteInGameThread(function()          -- no Ar here
                 local ok, msg = ApplyBobSkin("standard", false)
                 log("skin bob standard -> " .. (ok and msg or ("ÉCHEC : " .. tostring(msg))))
             end)
             return true
         end
-        -- 'skin bob keep' : mesh mime + matériaux d'origine (MID paramétrés par
-        -- le jeu) au lieu des matériaux bruts du mesh, qui rendent noir.
+        -- 'skin bob keep': mime mesh + original materials (MIDs parameterized by
+        -- the game) instead of the mesh's raw materials, which render black.
         local keep = (sub == "keep" or sub == "mid")
         say(Ar, "Marcel Bob : échange du mesh vers SKEL_Bob_Mime"
                 .. (keep and " (+ matériaux d'origine conservés)" or "") .. "…")
-        ExecuteInGameThread(function()              -- pas de Ar ici
+        ExecuteInGameThread(function()              -- no Ar here
             local ok, msg = ApplyBobSkin("mime", true, keep)
             log("skin bob -> " .. (ok and msg or ("ÉCHEC : " .. tostring(msg))))
         end)
@@ -1472,7 +1472,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         if sub == "diag" then
             say(Ar, "diagnostic de l'outline — rien ne sera modifié.")
             say(Ar, "détail complet dans la FENÊTRE DE CONSOLE UE4SS.")
-            ExecuteInGameThread(function()          -- pas de Ar ici
+            ExecuteInGameThread(function()          -- no Ar here
                 local n = DiagOutline()
                 log("outline diag -> " .. tostring(n) .. " composant(s) d'overlay")
             end)
@@ -1482,7 +1482,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         if sub == "on" then
             say(Ar, "restauration de l'outline…")
             outlineLocked = false
-            ExecuteInGameThread(function()          -- pas de Ar ici
+            ExecuteInGameThread(function()          -- no Ar here
                 local ok, msg = RestoreOutline()
                 log("outline on -> " .. tostring(msg))
             end)
@@ -1494,7 +1494,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
             say(Ar, outlineLocked and "verrou outline ACTIF : suppression relancée toutes les 1,5 s."
                                   or  "verrou outline levé.")
             if outlineLocked then
-                ExecuteInGameThread(function()      -- pas de Ar ici
+                ExecuteInGameThread(function()      -- no Ar here
                     log("outline lock -> " .. tostring(KillOutline(false)) .. " composant(s)")
                 end)
             end
@@ -1506,7 +1506,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
             say(Ar, hard and "suppression NUCLÉAIRE de l'outline (irréversible jusqu'au rechargement du niveau)…"
                           or  "suppression de l'outline (cascade E1→E5)…")
             say(Ar, "détail complet dans la FENÊTRE DE CONSOLE UE4SS.")
-            ExecuteInGameThread(function()          -- pas de Ar ici
+            ExecuteInGameThread(function()          -- no Ar here
                 local n = KillOutline(hard)
                 log("outline " .. (hard and "hard" or "off") .. " -> "
                     .. tostring(n) .. " composant(s) d'overlay traité(s)")
@@ -1526,7 +1526,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         end
         n = math.floor(n)
         say(Ar, "application du Skin" .. n .. "…")
-        ExecuteInGameThread(function()          -- pas de Ar ici
+        ExecuteInGameThread(function()          -- no Ar here
             local ok, msg = ApplySkin(n)
             log("skin one " .. n .. " -> " .. (ok and msg or ("ÉCHEC : " .. tostring(msg))))
         end)
@@ -1549,18 +1549,18 @@ end)
 log("Chargé (v2). 'skin slots' pour découvrir, 'skin one 2' pour un skin caché.")
 
 -- ============================================================================
---  Application au démarrage (voir le bloc BOOT_* en tête).
---  On attend BOOT_DELAY_MS que le pawn du joueur soit prêt, puis on applique
---  ce que le launcher a demandé. En mode silencieux pour ne pas polluer la
---  console. Chaque étape est protégée : une erreur n'empêche pas les suivantes.
+--  Startup application (see the BOOT_* block at the top).
+--  We wait BOOT_DELAY_MS for the player's pawn to be ready, then apply
+--  what the launcher requested. In silent mode so as not to pollute the
+--  console. Each step is protected: an error does not prevent the following ones.
 -- ============================================================================
 if BOOT_MESH ~= "none" or BOOT_SKIN >= 0 or BOOT_OUTLINE ~= "keep"
    or BOOT_HIDE_STICK or BOOT_HIDE_HAIR then
-    -- Pas d'ExecuteWithDelay ici (le mod n'en dépend pas) : on arme une LoopAsync
-    -- qui s'exécute une seule fois après BOOT_DELAY_MS, le temps que le pawn charge.
+    -- No ExecuteWithDelay here (the mod does not depend on it): we arm a LoopAsync
+    -- that runs only once after BOOT_DELAY_MS, while the pawn loads.
     local booted = false
     LoopAsync(BOOT_DELAY_MS, function()
-        if booted then return true end   -- true = arrête la boucle
+        if booted then return true end   -- true = stops the loop
         booted = true
         ExecuteInGameThread(function()
             quietly(function()
@@ -1569,7 +1569,7 @@ if BOOT_MESH ~= "none" or BOOT_SKIN >= 0 or BOOT_OUTLINE ~= "keep"
                     local entry = FindEntry(MESHES, BOOT_MESH)
                     if entry then SwapOneMesh(entry) end
                 end
-                -- Outline : KillOutline(false) retire la silhouette, RestoreOutline la remet.
+                -- Outline: KillOutline(false) removes the silhouette, RestoreOutline restores it.
                 if BOOT_OUTLINE == "off" then KillOutline(false)
                 elseif BOOT_OUTLINE == "on" then RestoreOutline() end
                 if BOOT_HIDE_STICK then HideActorsByClass({ "BP_Stick_C" }, true) end

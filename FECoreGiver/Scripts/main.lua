@@ -1,31 +1,31 @@
 -- ============================================================================
 --  FADING ECHO — CORE GIVER
 --
---  Extrait autonome du bloc "CORE GIVER" du FE Unlocker : rien que le don de
---  core, sans les ascenseurs / zones / murs alpha / portes.
+--  Standalone extract of the "CORE GIVER" block from the FE Unlocker: just the
+--  core-granting part, without the elevators / zones / alpha walls / doors.
 --
---  Console in-game (F10) :
---    core <élément>          waste | fire | water | glitch | power
---    core <élément> nograb   le pose devant toi sans l'attraper
---    core list               liste les éléments disponibles
+--  In-game console (F10):
+--    core <element>          waste | fire | water | glitch | power
+--    core <element> nograb   drops it in front of you without grabbing it
+--    core list               lists the available elements
 --
---  Tout est en pcall : si une brique échoue, le jeu continue.
+--  Everything runs in pcall: if one piece fails, the game keeps going.
 -- ============================================================================
 
 local UEHelpers = require("UEHelpers")
 
 local function log(m) print("[CoreGiver] " .. tostring(m) .. "\n") end
 
--- Écrit à la fois dans la console in-game (Ar) et dans la console UE4SS.
+-- Writes both to the in-game console (Ar) and to the UE4SS console.
 local function cout(Ar, msg)
     pcall(function() if Ar then Ar:Log(msg) end end)
     log(msg)
 end
 
 -- ---------------------------------------------------------------------------
---  Helpers joueur
+--  Player helpers
 -- ---------------------------------------------------------------------------
--- vrai acteur = pas un Class Default Object (le CDO est à l'origine 0,0,0).
+-- real actor = not a Class Default Object (the CDO sits at the origin 0,0,0).
 local function isRealActor(a)
     if not (a and a:IsValid()) then return false end
     local fn = ""; pcall(function() fn = a:GetFullName() end)
@@ -33,7 +33,7 @@ local function isRealActor(a)
 end
 
 local function GetPawn()
-    -- 1) pawn possédé par le PlayerController (le plus fiable)
+    -- 1) pawn possessed by the PlayerController (the most reliable)
     local cs = FindAllOf("PlayerController")
     if cs then
         for _, c in pairs(cs) do
@@ -46,7 +46,7 @@ local function GetPawn()
     -- 2) helper UE4SS
     local ok, p = pcall(UEHelpers.GetPlayerPawn)
     if ok and isRealActor(p) then return p end
-    -- 3) dernier recours : une instance NON-CDO du perso
+    -- 3) last resort: a NON-CDO instance of the character
     local list = FindAllOf("BP_CoreYgroCharacter_C")
     if list then
         for _, a in pairs(list) do
@@ -59,11 +59,11 @@ end
 -- ============================================================================
 --  CORE GIVER
 --
---  Fait apparaître un core élémentaire devant le joueur (BP_PortableItem_<X>Ball,
---  dérive de BP_PortableItem_C) puis le lui met dans les mains via StartGrab.
---  Le grab déclenche la charge élémentaire du jeu (UI + LB + pouvoir).
---  Spawn = BeginDeferredActorSpawnFromClass + FinishSpawningActor (6 entrées UE5).
---  Éléments réels : Water, Waste, Lava(=fire), Corruption(=glitch).
+--  Spawns an elemental core in front of the player (BP_PortableItem_<X>Ball,
+--  derives from BP_PortableItem_C) then puts it in their hands via StartGrab.
+--  The grab triggers the game's elemental charge (UI + LB + power).
+--  Spawn = BeginDeferredActorSpawnFromClass + FinishSpawningActor (6 UE5 args).
+--  Actual elements: Water, Waste, Lava(=fire), Corruption(=glitch).
 -- ============================================================================
 local CORE_BASE = "/Game/Game/Placeable/InteractiveObjects/PortableItem/"
 local CORE_ELEMENTS = {
@@ -74,10 +74,10 @@ local CORE_ELEMENTS = {
     power  = { path = CORE_BASE .. "BP_PortableItem_Power.BP_PortableItem_Power_C",                   short = "BP_PortableItem_Power_C",          label = "PowerCore" },
 }
 
--- Ordre d'affichage stable pour "core list" (CORE_ELEMENTS est une table de hash).
+-- Stable display order for "core list" (CORE_ELEMENTS is a hash table).
 local CORE_ORDER = { "waste", "fire", "water", "glitch", "power" }
 
--- UClass du ball : objet-classe si chargé, sinon la classe d'une instance présente.
+-- Ball's UClass: the class object if loaded, otherwise the class of a present instance.
 local function ResolveCoreClass(e)
     local c = StaticFindObject(e.path)
     if c and c:IsValid() then return c end
@@ -89,7 +89,7 @@ local function ResolveCoreClass(e)
     return nil
 end
 
--- Spawne le ball devant le joueur. Renvoie (actor, nil) ou (nil, message).
+-- Spawns the ball in front of the player. Returns (actor, nil) or (nil, message).
 local function SpawnCoreBall(e, pawn)
     local world = UEHelpers.GetWorld()
     if not (world and world:IsValid()) then return nil, "world introuvable." end
@@ -119,7 +119,7 @@ local function SpawnCoreBall(e, pawn)
     if not okS then return nil, "spawn a levé : " .. tostring(errS) end
     if not (actor and actor:IsValid()) then return nil, "spawn a renvoyé un acteur nul." end
 
-    for _, n in ipairs({ 3, 2 }) do   -- FinishSpawningActor : 3 args (UE5 récent) ou 2
+    for _, n in ipairs({ 3, 2 }) do   -- FinishSpawningActor: 3 args (recent UE5) or 2
         local okF = pcall(function()
             if n == 3 then GS:FinishSpawningActor(actor, xf, 0) else GS:FinishSpawningActor(actor, xf) end
         end)
@@ -146,8 +146,8 @@ RegisterConsoleCommandGlobalHandler("core", function(FullCommand, Parameters, Ar
         cout(Ar, "[core] usage : core waste|fire|water|glitch|power [nograb]  |  core list")
         return true
     end
-    -- 'nograb' : le core apparaît par terre sans être attrapé (pour tester
-    -- l'infinite core en forme de One : spawn un core et ne l'absorbe pas).
+    -- 'nograb': the core appears on the ground without being grabbed (to test
+    -- the infinite core in One's form: spawn a core and don't absorb it).
     local nograb = false
     for _, tok in ipairs(p) do
         local t = string.lower(tok)

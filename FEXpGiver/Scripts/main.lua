@@ -1,53 +1,53 @@
 -- ============================================================================
---  FADING ECHO — XP GIVER  (points d'Ætherfact)
+--  FADING ECHO — XP GIVER  (Ætherfact points)
 --
---  Console in-game (F10) :
---    xp             +1 point d'Ætherfact
---    xp <n>         +n points (ex. xp 5)
---    xp status      solde courant, sans rien donner
+--  In-game console (F10) :
+--    xp             +1 Ætherfact point
+--    xp <n>         +n points (e.g. xp 5)
+--    xp status      current balance, without giving anything
 --
 --  ---------------------------------------------------------------------------
---  CE QU'EST UN "POINT D'ÆTHERFACT" (relevé dans les données du jeu)
+--  WHAT AN "ÆTHERFACT POINT" IS (found in the game data)
 --
---  C'est la statistique **SkillPointBalance**, ligne 3 de la DataTable
+--  It's the **SkillPointBalance** statistic, row 3 of the DataTable
 --  DT_PerksStatTemplate (/Game/Game/Perks/Test/DT_PerksStatTemplate) :
 --      [ 3] SkillPointBalance   default=0  min=0  max=+Inf
 --
---  Preuves croisées :
---   * WBP_PerkToolTip affiche "Cost" + "Ætherfact point(s)" -> c'est le prix des perks.
---   * CHAQUE DA_Perk_*.json porte une StatisticCondition sur SkillPointBalance
---     (le contrôle du coût à l'achat).
+--  Cross-checks :
+--   * WBP_PerkToolTip shows "Cost" + "Ætherfact point(s)" -> it's the price of perks.
+--   * EVERY DA_Perk_*.json carries a StatisticCondition on SkillPointBalance
+--     (the cost check at purchase).
 --   * DA_IncreaseSkillPoints_XS_StatisticModifier = "SkillPointBalance += 1.0"
---     (Operator=Addition, Operand=FlatValue 1.0, StatisticIndex=3) — c'est la
---     récompense de level-up du jeu, référencée par DA_LevelUpDescriptor.
+--     (Operator=Addition, Operand=FlatValue 1.0, StatisticIndex=3) — it's the
+--     game's level-up reward, referenced by DA_LevelUpDescriptor.
 --
 --  ---------------------------------------------------------------------------
---  POURQUOI IncreaseStatisticBaseValue ET PAS ApplyStatisticModifierSet
+--  WHY IncreaseStatisticBaseValue AND NOT ApplyStatisticModifierSet
 --
---  UStatisticHolderComponent expose 6 fonctions BlueprintCallable (confirmées au
---  PDB, symboles exec*). Signatures EXACTES, lues dans les symboles mangés :
+--  UStatisticHolderComponent exposes 6 BlueprintCallable functions (confirmed in
+--  the PDB, exec* symbols). EXACT signatures, read from the mangled symbols :
 --
 --      ?IncreaseStatisticBaseValue@UStatisticHolderComponent@@QEAAXVFString@@M@Z
 --      ?SetStatisticBaseValue@UStatisticHolderComponent@@QEAAXVFString@@M@Z
 --      ?GetStatisticValue@UStatisticHolderComponent@@QEBAMVFString@@@Z
 --
---  soit : (FString StatisticName, float Value).
+--  that is : (FString StatisticName, float Value).
 --
---  /!\ PIÈGE — StatisticName est une **FString**, pas une FName.
---  GetStatisticValue est surchargée en C++ (FString / FName / FStatisticIdentifier),
---  mais c'est la surcharge **FString** qui est exposée au Blueprint. Passer un objet
---  FName ici fait crasher le jeu : UE4SS écrit l'argument comme une StrProperty
---  (push_strproperty -> FString::SetCharArray) et déréférence n'importe quoi
---  -> EXCEPTION_ACCESS_VIOLATION. On passe donc une chaîne Lua brute.
---  (Le type FGenericPropertyParams des NewProp_ au PDB ne permet PAS de trancher
---   FName vs FString : il couvre les deux. Seul le symbole mangé le dit.)
+--  /!\ PITFALL — StatisticName is an **FString**, not an FName.
+--  GetStatisticValue is overloaded in C++ (FString / FName / FStatisticIdentifier),
+--  but it's the **FString** overload that is exposed to Blueprint. Passing an
+--  FName object here crashes the game : UE4SS writes the argument as a StrProperty
+--  (push_strproperty -> FString::SetCharArray) and dereferences garbage
+--  -> EXCEPTION_ACCESS_VIOLATION. So we pass a raw Lua string.
+--  (The FGenericPropertyParams type of the NewProp_ in the PDB does NOT let you
+--   decide FName vs FString : it covers both. Only the mangled symbol tells.)
 --
---  Le jeu, lui, donne ses points via ApplyStatisticModifierSet(DA_IncreaseSkillPoints_XS).
---  On ne fait PAS ça ici : un modifier set est une COUCHE qu'on applique/retire
---  (Apply/Unapply). Rien ne garantit qu'appliquer deux fois le même descripteur
---  empile deux fois — or on veut justement pouvoir retaper 'xp' en boucle.
---  IncreaseStatisticBaseValue écrit la valeur de BASE : c'est cumulatif par
---  construction, donc répétable.
+--  The game itself gives its points via ApplyStatisticModifierSet(DA_IncreaseSkillPoints_XS).
+--  We do NOT do that here : a modifier set is a LAYER you apply/remove
+--  (Apply/Unapply). Nothing guarantees that applying the same descriptor twice
+--  stacks twice — yet we specifically want to be able to run 'xp' repeatedly.
+--  IncreaseStatisticBaseValue writes the BASE value : it's cumulative by
+--  construction, hence repeatable.
 -- ============================================================================
 
 local UEHelpers = require("UEHelpers")
@@ -56,13 +56,13 @@ local STAT = "SkillPointBalance"
 
 local function log(m) print("[XpGiver] " .. tostring(m) .. "\n") end
 
--- Écrit à la fois dans la console in-game (Ar) et dans la console UE4SS.
+-- Writes both to the in-game console (Ar) and to the UE4SS console.
 local function cout(Ar, msg)
     pcall(function() if Ar then Ar:Log(msg) end end)
     log(msg)
 end
 
--- vrai acteur/objet = pas un Class Default Object.
+-- real actor/object = not a Class Default Object.
 local function isReal(o)
     if not (o and o:IsValid()) then return false end
     local fn = ""; pcall(function() fn = o:GetFullName() end)
@@ -85,18 +85,18 @@ local function GetPawn()
 end
 
 -- ---------------------------------------------------------------------------
---  Trouver le StatisticHolderComponent qui porte DT_PerksStatTemplate.
+--  Find the StatisticHolderComponent that carries DT_PerksStatTemplate.
 --
---  Chemin principal : PH_XP_Manager_C (ActorComponent) expose une propriété
---  StatHolder : StatisticHolderComponent. C'est le composant qui gère la monnaie
---  (il a UpdateCurrency(CurrencyToAdd), XPCurrency, OnCurrencyIncrease) —
---  son holder est donc bien celui du template des perks.
+--  Main path : PH_XP_Manager_C (ActorComponent) exposes a property
+--  StatHolder : StatisticHolderComponent. It's the component that manages the
+--  currency (it has UpdateCurrency(CurrencyToAdd), XPCurrency, OnCurrencyIncrease) —
+--  so its holder is indeed the one for the perks template.
 --
---  Repli : on balaie les StatisticHolderComponent du pawn. Comme plusieurs
---  holders coexistent (un par template : santé, perks...), on ne peut pas les
---  distinguer par lecture seule — GetStatisticValue renvoie 0 aussi bien pour
---  "stat à zéro" que pour "stat inconnue de ce template". On tranche donc en
---  écrivant : le bon holder est celui dont la valeur bouge réellement.
+--  Fallback : we sweep the pawn's StatisticHolderComponent. Since several
+--  holders coexist (one per template : health, perks...), we can't tell them
+--  apart read-only — GetStatisticValue returns 0 both for
+--  "stat at zero" and for "stat unknown to this template". So we decide by
+--  writing : the right holder is the one whose value actually moves.
 -- ---------------------------------------------------------------------------
 local function ManagerHolder()
     local mgrs = FindAllOf("PH_XP_Manager_C")
@@ -121,16 +121,16 @@ local function CandidateHolders()
             end
         end
     end
-    add(ManagerHolder())                      -- le bon, en principe
+    add(ManagerHolder())                      -- the right one, in principle
     local ok, list = pcall(function() return FindAllOf("StatisticHolderComponent") end)
     if ok and list then
-        for _, h in pairs(list) do add(h) end -- repli : tous les autres
+        for _, h in pairs(list) do add(h) end -- fallback : all the others
     end
     return out
 end
 
--- /!\ StatisticName est une FString, PAS une FName (voir l'entête). On passe donc
--- une chaîne Lua brute : UE4SS la convertit en FString pour la StrProperty.
+-- /!\ StatisticName is an FString, NOT an FName (see the header). So we pass
+-- a raw Lua string : UE4SS converts it to an FString for the StrProperty.
 local function ReadPoints(holder)
     local v
     local ok = pcall(function() v = holder:GetStatisticValue(STAT) end)
@@ -138,7 +138,7 @@ local function ReadPoints(holder)
     return nil
 end
 
--- Donne n points. Renvoie (holder, avant, apres) si ça a marché, sinon nil.
+-- Gives n points. Returns (holder, before, after) if it worked, otherwise nil.
 local function GivePoints(n)
     for _, h in ipairs(CandidateHolders()) do
         local ready = true
@@ -148,8 +148,8 @@ local function GivePoints(n)
             if before then
                 pcall(function() h:IncreaseStatisticBaseValue(STAT, n * 1.0) end)
                 local after = ReadPoints(h)
-                -- On ne valide que si la valeur a VRAIMENT bougé : c'est ce qui
-                -- distingue le holder du template perks des autres holders.
+                -- We only accept it if the value REALLY moved : that's what
+                -- distinguishes the perks template holder from the other holders.
                 if after and after > before then return h, before, after end
             end
         end

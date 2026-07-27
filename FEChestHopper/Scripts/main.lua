@@ -1,26 +1,26 @@
 -- ============================================================================
 --  FADING ECHO — CHEST HOPPER
 --
---  Commande console (F10) :
---     chest              -> téléporte au coffre suivant (1er appel = le plus proche)
---     chest reset        -> reconstruit la tournée depuis ta position actuelle
---     chest prev         -> revient au coffre précédent
---     chest <n>          -> saute directement au n-ième coffre de la tournée
---     chest list         -> liste les coffres trouvés + leur distance
+--  Console command (F10) :
+--     chest              -> teleports to the next chest (1st call = the nearest)
+--     chest reset        -> rebuilds the tour from your current position
+--     chest prev         -> goes back to the previous chest
+--     chest <n>          -> jumps straight to the n-th chest of the tour
+--     chest list         -> lists the chests found + their distance
 --
---  Principe : au 1er 'chest', on collecte tous les coffres CHARGÉS, on les trie
---  par distance au joueur, et on parcourt cette liste figée. Elle est refaite
---  automatiquement si le nombre de coffres change (streaming de niveau) ou via
+--  Principle : on the 1st 'chest', we collect all LOADED chests, sort them
+--  by distance to the player, and walk through this frozen list. It's rebuilt
+--  automatically if the number of chests changes (level streaming) or via
 --  'chest reset'.
 --
---  ⚠️ Le tri est figé au moment de la construction : c'est voulu. Un tri
---  recalculé à chaque saut renverrait sans cesse au coffre d'où l'on vient
---  (distance 0), on ne visiterait jamais toute la zone.
+--  ⚠️ The sort is frozen at build time : this is intentional. A sort
+--  recomputed on every jump would keep sending you back to the chest you came
+--  from (distance 0), and you'd never visit the whole zone.
 --
---  ⚠️ Seuls les coffres dont le sous-niveau est CHARGÉ sont visibles par
---  FindAllOf. Les coffres d'une zone non streamée n'existent pas encore côté
---  moteur — aucun mod ne peut les atteindre. 'chest list' montre ce qui est
---  réellement trouvé à l'instant T.
+--  ⚠️ Only chests whose sub-level is LOADED are visible to
+--  FindAllOf. Chests of a non-streamed zone don't exist yet on the
+--  engine side — no mod can reach them. 'chest list' shows what is
+--  actually found at time T.
 --
 --  Classes : /Game/Game/Placeable/InteractiveObjects/Chest/
 -- ============================================================================
@@ -33,8 +33,8 @@ local function cout(Ar, m)
     log(m)
 end
 
--- Hauteur ajoutée à la destination : on se pose AU-DESSUS du coffre plutôt que
--- dedans (sinon la capsule du joueur peut se coincer dans la collision).
+-- Height added to the destination : we land ABOVE the chest rather than
+-- inside it (otherwise the player's capsule can get stuck in the collision).
 local Z_OFFSET = 150.0
 
 local CHEST_CLASSES = {
@@ -45,7 +45,7 @@ local CHEST_CLASSES = {
     "BP_Chest_ALIENWARE_C",
 }
 
--- Libellé court pour l'affichage
+-- Short label for display
 local function PrettyClass(fullname)
     local n = tostring(fullname or "")
     for _, cls in ipairs(CHEST_CLASSES) do
@@ -57,14 +57,14 @@ local function PrettyClass(fullname)
 end
 
 -- ---------------------------------------------------------------------------
---  Helpers acteurs / joueur  (mêmes garde-fous que les autres mods FE)
+--  Actor / player helpers  (same safeguards as the other FE mods)
 -- ---------------------------------------------------------------------------
 local function isRealActor(a)
     if not (a and a:IsValid()) then return false end
     local fn = ""
     pcall(function() fn = a:GetFullName() end)
-    -- On exclut les Class Default Objects : ce sont des gabarits, pas des
-    -- acteurs posés dans le niveau (ils ont une position bidon, souvent 0,0,0).
+    -- We exclude Class Default Objects : they are templates, not
+    -- actors placed in the level (they have a bogus position, often 0,0,0).
     return not string.find(fn, "Default__", 1, true)
 end
 
@@ -102,7 +102,7 @@ local function Dist3(a, b)
 end
 
 -- ---------------------------------------------------------------------------
---  Collecte
+--  Collection
 -- ---------------------------------------------------------------------------
 local function CollectChests()
     local found, seen = {}, {}
@@ -127,10 +127,10 @@ local function CollectChests()
 end
 
 -- ---------------------------------------------------------------------------
---  État de la tournée
+--  Tour state
 -- ---------------------------------------------------------------------------
-local tour = {}   -- liste triée par distance, figée
-local idx = 0     -- index du dernier coffre visité (0 = pas encore parti)
+local tour = {}   -- list sorted by distance, frozen
+local idx = 0     -- index of the last visited chest (0 = not started yet)
 
 local function BuildTour(Ar)
     local pawn = GetPawn()
@@ -150,8 +150,8 @@ local function BuildTour(Ar)
     return true, nil
 end
 
--- La tournée est périmée si des coffres ont été chargés/déchargés depuis,
--- ou si un acteur mémorisé n'est plus valide (changement de zone).
+-- The tour is stale if chests have been loaded/unloaded since,
+-- or if a memorized actor is no longer valid (zone change).
 local function TourIsStale()
     if #tour == 0 then return true end
     if #CollectChests() ~= #tour then return true end
@@ -164,8 +164,8 @@ end
 local function TeleportTo(entry)
     local pawn = GetPawn()
     if not pawn then return false, "joueur introuvable" end
-    -- On relit la position à chaud : un coffre peut avoir bougé (plateforme,
-    -- ascenseur) depuis la construction de la tournée.
+    -- We re-read the position live : a chest may have moved (platform,
+    -- elevator) since the tour was built.
     local loc = ProbeLocation(entry.actor) or entry.loc
     local dest = { X = loc.X, Y = loc.Y, Z = loc.Z + Z_OFFSET }
     local ok = pcall(function() pawn:K2_SetActorLocation(dest, false, {}, true) end)
@@ -190,7 +190,7 @@ local function GoTo(Ar, n)
 end
 
 -- ---------------------------------------------------------------------------
---  Commande console
+--  Console command
 -- ---------------------------------------------------------------------------
 RegisterConsoleCommandGlobalHandler("chest", function(FullCommand, Parameters, Ar)
     local p = Parameters or {}
@@ -247,7 +247,7 @@ RegisterConsoleCommandGlobalHandler("chest", function(FullCommand, Parameters, A
         return true
     end
 
-    -- 'chest' tout court : construire si besoin, puis avancer
+    -- plain 'chest' : build if needed, then advance
     if TourIsStale() then
         local ok, err = BuildTour(Ar)
         if not ok then cout(Ar, "[chest] " .. tostring(err)); return true end
