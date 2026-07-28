@@ -516,14 +516,8 @@ local MESHES = {
     { "wonder5",   "/Game/Art/Character/LastWonder/SKEL_LastWonder_Step05",     "Last Wonder (5)" },
     { "disappear", "/Game/Art/Character/Disappear/SKEL_Disappear",              "Disappear" },
     { "cine",      "/Game/Art/Character/Builder/SK_BuilderCINEMATIC",           "Builder (cinematic)" },
-    { "mannequin", "/Game/SoStylized/Demo/Pawn/Mannequin/Character/Mesh/SK_Mannequin", "Mannequin Unreal" },
+    { "mannequin", "/Game/SoStylized/Demo/Pawn/Mannequin/Character/Mesh/SK_Mannequin", "Unreal Mannequin" },
     { "hat",       "/Game/Art/Character/Rahne/SK_Rahne_hat",                    "Rahne's hat (gag)" },
-    -- ⚠️ EXTERNAL ASSET: exists ONLY if the custom pak is mounted in Content/Paks/.
-    -- Resolve() will fail cleanly as long as that is not the case.
-    -- Path captured via "Copy reference" in the UE 5.6 editor:
-    --   /Script/Engine.SkeletalMesh'/Game/Test_Alien-Animal-Blender_2_81.Test_Alien-Animal-Blender_2_81'
-    -- Mind the mix of dashes/underscores: Test_Alien-Animal-Blender_2_81
-    { "alien",     "/Game/Test_Alien-Animal-Blender_2_81",                      "Alien Animal (custom pak)" },
     { "one",       "/Game/Art/Character/Hero/Hero_Facial_Final/SK_Hero_facial", "One (original)" },
     { "hero",      "/Game/Art/Character/Hero/Hero_Facial_Final/SK_Hero_facial", "One (alias)" },
 }
