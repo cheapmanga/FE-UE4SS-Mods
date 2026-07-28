@@ -2,14 +2,14 @@
 --  FADING ECHO — MOON JUMP  (separate mod: infinite jump / BotW-style flight)
 --
 --  Two independent modes:
---   - MOONJUMP (F7)  : as long as JUMP is HELD, we force the vertical velocity
+--   - MOONJUMP (F3)  : as long as JUMP is HELD, we force the vertical velocity
 --                      -> the character rises continuously (BotW's "moonjump").
 --                      Relies on LaunchCharacter(vel, false, true): a UFUNCTION
 --                      of ACharacter, hence callable via UE4SS.
---   - MULTIJUMP (F6) : JumpMaxCount = 999 -> you can re-jump in mid-air at will
+--   - MULTIJUMP (F4) : JumpMaxCount = 999 -> you can re-jump in mid-air at will
 --                      ("classic" infinite jump, keeps the game's physics).
 --
---  Console (F10):
+--  Console (²):
 --   moonjump            toggle moonjump
 --   moonjump speed <n>  rise speed (default 700, in cm/s)
 --   moonjump key <FKey> watched key (default SpaceBar; e.g. Gamepad_FaceButton_Bottom)
@@ -70,6 +70,28 @@ end
 -- ---------------------------------------------------------------------------
 --  MOONJUMP: rise loop as long as the key is held
 -- ---------------------------------------------------------------------------
+-- Pawn for the current tick. Written by the async loop, READ by the stable
+-- function below: it must NOT be captured by a per-pass closure (see why below).
+local TickPawn = nil
+
+-- STABLE function, defined ONCE and passed BY REFERENCE to ExecuteInGameThread.
+-- Why it must never be recreated: a FRESH closure handed over 60x/s is registered
+-- by UE4SS and can be freed by the GC before it runs -> "[Lua::Registry::
+-- get_function_ref] Ref was not function" -> UE4SS REMOVES the EngineTick hook ->
+-- EVERY Lua mod stops until the game restarts, at an unpredictable moment.
+-- (Same fix as FEBadApple's gameTick.)
+local function moonTick()
+    -- Under pcall: an error must NEVER reach the hook (same consequence as above).
+    pcall(function()
+        local pawn = TickPawn
+        if not isRealActor(pawn) then return end
+        -- XYOverride=false : we keep horizontal control.
+        -- ZOverride=true   : we override the vertical velocity -> clean rise,
+        --                    gravity doesn't accumulate.
+        pawn:LaunchCharacter({ X = 0.0, Y = 0.0, Z = RISE_SPEED * 1.0 }, false, true)
+    end)
+end
+
 LoopAsync(TICK_MS, function()
     if MoonOn then
         pcall(function()
@@ -77,14 +99,8 @@ LoopAsync(TICK_MS, function()
             if not (pc and IsJumpHeld(pc)) then return end
             local pawn = pc.Pawn
             if not isRealActor(pawn) then return end
-            ExecuteInGameThread(function()
-                pcall(function()
-                    -- XYOverride=false : we keep horizontal control.
-                    -- ZOverride=true   : we override the vertical velocity -> clean rise,
-                    --                    gravity doesn't accumulate.
-                    pawn:LaunchCharacter({ X = 0.0, Y = 0.0, Z = RISE_SPEED * 1.0 }, false, true)
-                end)
-            end)
+            TickPawn = pawn
+            ExecuteInGameThread(moonTick)   -- same ref every pass, GC-safe
         end)
     end
     return false
@@ -137,8 +153,9 @@ local function ToggleMulti(Ar)
     cout(Ar, "[multijump] " .. (MultiOn and ("ON — JumpMaxCount = " .. MULTI_COUNT .. ".") or "OFF — JumpMaxCount restored."))
 end
 
-RegisterKeyBind(Key.F7, function() ToggleMoon(nil) end)
-RegisterKeyBind(Key.F6, function() ExecuteInGameThread(function() ToggleMulti(nil) end) end)
+-- F3 / F4: F6/F7 belong to FETeleport (save/load position) and F9/F10 to FEVoidCancel.
+RegisterKeyBind(Key.F3, function() ToggleMoon(nil) end)
+RegisterKeyBind(Key.F4, function() ExecuteInGameThread(function() ToggleMulti(nil) end) end)
 
 -- ---------------------------------------------------------------------------
 --  Console
@@ -166,7 +183,9 @@ RegisterConsoleCommandGlobalHandler("moonjump", function(FullCommand, Parameters
         local pawn = GetPawn()
         local jm = "?"
         pcall(function() if pawn then jm = tostring(pawn.JumpMaxCount) end end)
-        cout(Ar, string.format("[moonjump] moon=%s multi=%s speed=%d key=%s JumpMaxCount=%s",
+        -- %s and not %d: `moonjump speed 250.5` stores a float, and %d raises
+        -- "number has no integer representation" in Lua 5.4 (no pcall here).
+        cout(Ar, string.format("[moonjump] moon=%s multi=%s speed=%s key=%s JumpMaxCount=%s",
             tostring(MoonOn), tostring(MultiOn), RISE_SPEED, JUMP_KEY, jm))
         return true
     end
@@ -180,4 +199,4 @@ RegisterConsoleCommandGlobalHandler("multijump", function(FullCommand, Parameter
     return true
 end)
 
-log("loaded. F7 = moonjump (hold " .. JUMP_KEY .. "), F6 = multijump. Console: moonjump | multijump.")
+log("loaded. F3 = moonjump (hold " .. JUMP_KEY .. "), F4 = multijump. Console: moonjump | multijump.")

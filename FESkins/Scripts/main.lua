@@ -284,6 +284,10 @@ local BOB_CLASSES = { "BP_Bob_Critter_C", "BP_Bob_Critter_Lava_C", "BP_Bob_Critt
 local bobOriginalMats = nil     -- { [actorFullName] = { [slot] = mat } }
 local bobOriginalMesh = nil     -- { [actorFullName] = skinnedAsset }
 local bobMode         = nil     -- nil | "mime" | "standard" (for the lock)
+-- ⚠️ The lock must REPLAY the exact command the user issued. Without this,
+-- a re-apply triggered by the lock loses the 'keep' choice and takes the
+-- override-purge branch -> Bob renders BLACK (the very thing 'keep' prevents).
+local bobKeepMats     = false   -- last keepMats used (for the lock)
 
 -- ⚠️ DEDUPLICATION MANDATORY: BP_Bob_Critter_Lava_C and _Waste_C INHERIT from
 -- BP_Bob_Critter_C, so FindAllOf on the parent class also returns the
@@ -444,6 +448,7 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
         return false, touched .. " Bob found but nothing was applied"
     end
     bobMode = mode
+    bobKeepMats = keepMats and true or false
     return true, touched .. " Bob" .. (slots > 0 and (", " .. slots .. " slot(s)") or "") .. (mesh and " + mesh mime" or "")
 end
 
@@ -534,6 +539,23 @@ local HideActorsByClass, ListNearbyActors, KNOWN_ATTACHMENTS
 -- State tables: declared HERE because SwapOneMesh (below) uses them,
 -- while their original section comes after it.
 local hidden, hiddenActors = {}, {}
+-- ⚠️ The swap maintenance loop re-hides the same actors every 1.5 s. Appending
+-- blindly made hiddenActors grow without bound (~80 duplicates/minute), and
+-- UnhideAttachedActors then re-walked the whole list. We index the entries by
+-- the actor's full name so the list stays proportional to the number of
+-- DISTINCT actors. A stale entry (actor destroyed then recreated by the game
+-- under the same name) is overwritten rather than duplicated.
+local hiddenActorIdx = {}      -- [actorFullName] = index in hiddenActors
+local function TrackHiddenActor(a)
+    local key = Name(a)
+    local i = hiddenActorIdx[key]
+    if i then
+        if not okObj(hiddenActors[i]) then hiddenActors[i] = a end
+        return
+    end
+    hiddenActors[#hiddenActors + 1] = a
+    hiddenActorIdx[key] = #hiddenActors
+end
 local HandleOverlay
 -- OUTLINE module (black outline): declared HERE because HandleOverlay and the
 -- maintenance loop call them before their definition (pitfall g).
@@ -696,7 +718,7 @@ HideActorsByClass = function(classes, hide)
                 if isRealObject(a) then
                     if pcall(function() a:SetActorHiddenInGame(hide) end) then
                         n = n + 1
-                        if hide then hiddenActors[#hiddenActors + 1] = a end
+                        if hide then TrackHiddenActor(a) end
                         log("    " .. (hide and "hidden" or "shown") .. " : " .. ShortName(a))
                     end
                 end
@@ -1135,7 +1157,7 @@ HideAttachedActors = function()
         if not okObj(a) then return end
         if Name(a) == Name(pawn) then return end
         if pcall(function() a:SetActorHiddenInGame(true) end) then
-            hiddenActors[#hiddenActors + 1] = a
+            TrackHiddenActor(a)
             n = n + 1
             log("    actor hidden: " .. ShortName(a))
         end
@@ -1158,6 +1180,7 @@ UnhideAttachedActors = function()
         if okObj(a) and pcall(function() a:SetActorHiddenInGame(false) end) then n = n + 1 end
     end
     hiddenActors = {}
+    hiddenActorIdx = {}
     return n
 end
 
@@ -1268,7 +1291,7 @@ LoopAsync(2000, function()
                 quietly(function()
                     if current then ApplySkin(current) end
                     -- Bob too: if the game reimposes its mesh/material, we restore it.
-                    if bobMode then ApplyBobSkin(bobMode, bobMode == "mime") end
+                    if bobMode then ApplyBobSkin(bobMode, bobMode == "mime", bobKeepMats) end
                 end)
             end)
         end)

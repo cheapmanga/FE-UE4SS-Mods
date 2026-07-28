@@ -10,8 +10,13 @@ local UEHelpers = require("UEHelpers")
 local function log(m) print("[FE-HUD] " .. tostring(m) .. "\n") end
 
 --  Shared helpers (copied from the main toolkit to keep the mod standalone)
+-- /!\ o:IsValid() CRASHES if `o` is not a UObject ("attempt to call a nil
+-- value (method 'IsValid')"), so it goes through pcall like GetFullName().
 local function isRealObject(o)
-    if not (o and o:IsValid()) then return false end
+    if not o then return false end
+    local valid = false
+    pcall(function() valid = o:IsValid() end)
+    if not valid then return false end
     local fn = ""
     pcall(function() fn = o:GetFullName() end)
     -- Class Default Objects are templates, not the live object.

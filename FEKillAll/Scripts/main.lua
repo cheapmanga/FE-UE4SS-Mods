@@ -29,8 +29,13 @@ local function say(Ar, m)
 end
 
 -- A Class Default Object is a template, not a living enemy.
+-- /!\ o:IsValid() CRASHES if `o` is not a UObject ("attempt to call a nil
+-- value (method 'IsValid')"), so it goes through pcall like GetFullName().
 local function isLive(o)
-    if not (o and o:IsValid()) then return false end
+    if not o then return false end
+    local valid = false
+    pcall(function() valid = o:IsValid() end)
+    if not valid then return false end
     local fn = ""
     pcall(function() fn = o:GetFullName() end)
     return not string.find(fn, "Default__", 1, true)

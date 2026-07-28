@@ -119,8 +119,18 @@ end
 -- ---------------------------------------------------------------------------
 --  Engine helpers (same safeguards as the other FE mods)
 -- ---------------------------------------------------------------------------
+-- ⚠️ `o:IsValid()` CRASHES if `o` is not a UObject: "attempt to call a nil
+-- value (method 'IsValid')". Real case: iterating with pairs() over a TArray
+-- returned by the engine yields non-object entries. Same hardening as FESkins.
+local function okObj(o)
+    if not o then return false end
+    local v = false
+    pcall(function() v = o:IsValid() end)
+    return v
+end
+
 local function isRealActor(a)
-    if not (a and a:IsValid()) then return false end
+    if not okObj(a) then return false end
     local fn = ""
     pcall(function() fn = a:GetFullName() end)
     return not string.find(fn, "Default__", 1, true)
@@ -655,12 +665,11 @@ end
 --  Rendering a frame
 -- ---------------------------------------------------------------------------
 local lostActors = 0
--- Forces one frame to reposition ALL active cubes, even if the cache says they
--- haven't moved. Used to heal "stuck" cubes: under lag, a
--- K2_SetActorLocation can be missed, the cube stays at the old position while
--- the cache thinks it moved it -> ghost line that persists. A periodic
--- resync (every CFG.resync frames) makes it disappear in <1 s.
-local FORCE_RESYNC = false
+-- NOTE: there is no global "force resync" flag any more. Healing "stuck" cubes
+-- (a K2_SetActorLocation missed under lag: the cube stays at the old position
+-- while the cache thinks it moved) is entirely handled by the rolling sweep
+-- healSlice() below, which re-applies position/hiding on a slice of the pool
+-- every frame instead of paying for a whole-pool pass at once.
 
 -- Hide / show a cube RELIABLY: at the actor AND component level.
 -- SetActorHiddenInGame alone proved insufficient on some builds.
@@ -678,18 +687,17 @@ local function hideSlot(slot)
     slot.hidden = true
 end
 
--- Hides cubes with index > n: hidden AND parked behind the background. Normally
--- each cube is hidden/parked only ONCE per transition (cheap).
--- On resync (force=true) we RE-hide and RE-park all the extras unconditionally:
--- this catches a "straggler" cube whose hiding or parking had failed
--- once (the slot.parked flag was set anyway, so never retried).
-local function hideExtras(n, force)
+-- Hides cubes with index > n: hidden AND parked behind the background. Each
+-- cube is hidden/parked only ONCE per transition (cheap). A "straggler" cube
+-- whose hiding or parking failed once (the slot.parked flag was set anyway, so
+-- never retried here) is caught by the rolling sweep healSlice().
+local function hideExtras(n)
     for k = n + 1, #POOL do
         local slot = POOL[k]
         local a = slot.actor
         if a and a:IsValid() then
-            if force or not slot.hidden then hideSlot(slot) end
-            if force or not slot.parked then
+            if not slot.hidden then hideSlot(slot) end
+            if not slot.parked then
                 try(function() a:K2_SetActorLocation(parkSpot(), false, {}, true) end)
                 slot.parked = true
                 slot.x, slot.y, slot.w, slot.h = -1, -1, -1, -1  -- cache invalidated: will force a real reposition on return
@@ -756,7 +764,7 @@ local function renderRects(s)
             end
         end
     end
-    hideExtras(n, FORCE_RESYNC)
+    hideExtras(n)
     return n
 end
 
@@ -794,7 +802,7 @@ local function renderCells(s)
             end
         end
     end
-    hideExtras(n, FORCE_RESYNC)
+    hideExtras(n)
     return n
 end
 
@@ -1406,7 +1414,12 @@ RegisterConsoleCommandHandler("badapple", function(FullCommand, Parameters, Ar)
         local pawn = GetPawn()
         if not pawn or not loadData(Ar) then return true end
         -- Nothing ready? We set up a mode (ISM running -> we keep it).
-        if POOL_KIND ~= "ism" and #POOL == 0 then
+        -- ⚠️ A non-empty POOL is NOT enough: `test`/`probe` leave a single
+        -- diagnostic cube in POOL, and rendering a frame with it would move
+        -- exactly ONE rectangle. Only buildPool (and the ISM path) set
+        -- POOL_KIND: that flag is what tells a real render pool from a
+        -- diagnostic leftover. buildPool destroys the leftover anyway.
+        if POOL_KIND == nil then
             if not buildScreen(pawn, Ar) then return true end
             if not buildPool("cubes", CFG.pool, Ar) then return true end
         end
@@ -1425,7 +1438,8 @@ RegisterConsoleCommandHandler("badapple", function(FullCommand, Parameters, Ar)
 
     if sub == "gfx" then
         local a2 = (Parameters[2] or ""):lower()
-        applyCleanGfx(Ar, a2 == "on")   -- "on" = default effects; otherwise = clean mode
+        -- applyCleanGfx(true) = CLEAN mode, applyCleanGfx(false) = default effects.
+        applyCleanGfx(Ar, a2 ~= "on")   -- "on" = default effects; otherwise = clean mode
         return true
     end
 

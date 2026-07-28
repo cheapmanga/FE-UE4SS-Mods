@@ -26,8 +26,12 @@ end
 --  Player helpers
 -- ---------------------------------------------------------------------------
 -- real actor = not a Class Default Object (the CDO sits at the origin 0,0,0).
+-- /!\ a:IsValid() CRASHES if `a` is not a UObject ("attempt to call a nil
+-- value (method 'IsValid')"), so it goes through pcall like GetFullName().
 local function isRealActor(a)
-    if not (a and a:IsValid()) then return false end
+    if not a then return false end
+    local valid = false; pcall(function() valid = a:IsValid() end)
+    if not valid then return false end
     local fn = ""; pcall(function() fn = a:GetFullName() end)
     return not string.find(fn, "Default__", 1, true)
 end
@@ -103,8 +107,14 @@ local function SpawnCoreBall(e, pawn)
                     e.label .. " core once to load it, then try again."
     end
 
-    local loc = pawn:K2_GetActorLocation()
-    local fwd = pawn:GetActorForwardVector()
+    -- The pawn can be torn down between GetPawn() and here (level transition or
+    -- respawn racing the console command) : never call it bare.
+    local loc, fwd
+    local okP = pcall(function()
+        loc = pawn:K2_GetActorLocation()
+        fwd = pawn:GetActorForwardVector()
+    end)
+    if not okP or not loc or not fwd then return nil, "player not found." end
     local pos = { X = loc.X + fwd.X * 120.0, Y = loc.Y + fwd.Y * 120.0, Z = loc.Z + 40.0 }
     local xf
     local okT = pcall(function()

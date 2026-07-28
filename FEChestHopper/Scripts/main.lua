@@ -59,8 +59,13 @@ end
 -- ---------------------------------------------------------------------------
 --  Actor / player helpers  (same safeguards as the other FE mods)
 -- ---------------------------------------------------------------------------
+-- /!\ a:IsValid() CRASHES if `a` is not a UObject ("attempt to call a nil
+-- value (method 'IsValid')"), so it goes through pcall like GetFullName().
 local function isRealActor(a)
-    if not (a and a:IsValid()) then return false end
+    if not a then return false end
+    local valid = false
+    pcall(function() valid = a:IsValid() end)
+    if not valid then return false end
     local fn = ""
     pcall(function() fn = a:GetFullName() end)
     -- We exclude Class Default Objects : they are templates, not

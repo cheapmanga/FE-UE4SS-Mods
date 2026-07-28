@@ -63,10 +63,23 @@ local function cout(Ar, msg)
 end
 
 -- real actor/object = not a Class Default Object.
+-- /!\ o:IsValid() CRASHES if `o` is not a UObject ("attempt to call a nil
+-- value (method 'IsValid')"), so it goes through pcall like GetFullName().
 local function isReal(o)
-    if not (o and o:IsValid()) then return false end
+    if not o then return false end
+    local valid = false; pcall(function() valid = o:IsValid() end)
+    if not valid then return false end
     local fn = ""; pcall(function() fn = o:GetFullName() end)
     return not string.find(fn, "Default__", 1, true)
+end
+
+-- Valid object, without the CDO test. Same pcall guard as isReal: needed for
+-- objects that come from a PROPERTY read (e.g. m.StatHolder) rather than from
+-- FindAllOf, since a property can hand back something that is not a UObject.
+local function okObj(o)
+    if not o then return false end
+    local valid = false; pcall(function() valid = o:IsValid() end)
+    return valid == true
 end
 
 local function GetPawn()
@@ -105,7 +118,7 @@ local function ManagerHolder()
         if isReal(m) then
             local h
             pcall(function() h = m.StatHolder end)
-            if h and h:IsValid() then return h end
+            if okObj(h) then return h end
         end
     end
     return nil
@@ -114,7 +127,7 @@ end
 local function CandidateHolders()
     local out, seen = {}, {}
     local function add(h)
-        if h and h:IsValid() then
+        if okObj(h) then
             local fn = ""; pcall(function() fn = h:GetFullName() end)
             if not seen[fn] and not string.find(fn, "Default__", 1, true) then
                 seen[fn] = true; table.insert(out, h)
