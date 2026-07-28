@@ -190,7 +190,7 @@ end
 -- ---------------------------------------------------------------------------
 --  Console command
 -- ---------------------------------------------------------------------------
-local USAGE = "[source] usage : source | source <n> | source set <n> | source status | source unlocked <n>"
+local USAGE = "[source] usage: source | source <n> | source set <n> | source status | source unlocked <n>"
 
 RegisterConsoleCommandGlobalHandler("source", function(FullCommand, Parameters, Ar)
     local p  = Parameters or {}
@@ -201,11 +201,11 @@ RegisterConsoleCommandGlobalHandler("source", function(FullCommand, Parameters, 
     if a1 == "status" or a1 == "get" then
         local c = StatusOf(STAT_CONNECTED)
         local u = StatusOf(STAT_UNLOCKED)
-        cout(Ar, string.format("[source] branchées (ConnectedSources) : %s / %d%s",
+        cout(Ar, string.format("[source] connected (ConnectedSources): %s / %d%s",
             c and string.format("%.0f", c) or "?", GOAL,
-            u and string.format("   |   trouvées (UnlockedSources) : %.0f", u) or ""))
+            u and string.format("   |   found (UnlockedSources): %.0f", u) or ""))
         if not c then
-            cout(Ar, "[source] holder introuvable — es-tu bien en jeu (pas dans un menu) ?")
+            cout(Ar, "[source] holder not found — are you actually in game (not in a menu)?")
         end
         return true
     end
@@ -215,16 +215,16 @@ RegisterConsoleCommandGlobalHandler("source", function(FullCommand, Parameters, 
         local target = tonumber(a2)
         if not target or target < 0 then cout(Ar, USAGE); return true end
         target = math.floor(target)
-        if not GetPawn() then cout(Ar, "[source] joueur introuvable — es-tu bien en jeu ?"); return true end
+        if not GetPawn() then cout(Ar, "[source] player not found — are you actually in game?"); return true end
         local h, before, after = SetStat(STAT_CONNECTED, target)
         if not h then
-            cout(Ar, "[source] échec : aucun holder n'a accepté d'écrire " .. STAT_CONNECTED ..
-                     ". Charge d'abord le Bastion puis réessaie.")
+            cout(Ar, "[source] failed: no holder accepted a write to " .. STAT_CONNECTED ..
+                     ". Load the Bastion first, then try again.")
             return true
         end
-        cout(Ar, string.format("[source] ConnectedSources fixé à %.0f (avant : %.0f).", after, before))
+        cout(Ar, string.format("[source] ConnectedSources set to %.0f (was: %.0f).", after, before))
         if after >= GOAL then
-            cout(Ar, "[source] ≥ 12 → condition du FinalFight remplie.")
+            cout(Ar, "[source] >= 12 -> FinalFight condition met.")
         end
         return true
     end
@@ -234,13 +234,13 @@ RegisterConsoleCommandGlobalHandler("source", function(FullCommand, Parameters, 
         local n = tonumber(a2) or 1
         if n < 1 then cout(Ar, USAGE); return true end
         n = math.floor(n)
-        if not GetPawn() then cout(Ar, "[source] joueur introuvable — es-tu bien en jeu ?"); return true end
+        if not GetPawn() then cout(Ar, "[source] player not found — are you actually in game?"); return true end
         local h, before, after = IncreaseStat(STAT_UNLOCKED, n)
         if not h then
-            cout(Ar, "[source] échec : aucun holder n'a accepté d'incrémenter " .. STAT_UNLOCKED .. ".")
+            cout(Ar, "[source] failed: no holder accepted an increment of " .. STAT_UNLOCKED .. ".")
             return true
         end
-        cout(Ar, string.format("[source] +%d → %.0f source(s) trouvée(s) (avant : %.0f).", n, after, before))
+        cout(Ar, string.format("[source] +%d -> %.0f source(s) found (was: %.0f).", n, after, before))
         return true
     end
 
@@ -253,22 +253,22 @@ RegisterConsoleCommandGlobalHandler("source", function(FullCommand, Parameters, 
     end
 
     if not GetPawn() then
-        cout(Ar, "[source] joueur introuvable — es-tu bien en jeu (pas dans un menu) ?")
+        cout(Ar, "[source] player not found — are you actually in game (not in a menu)?")
         return true
     end
 
     local h, before, after = IncreaseStat(STAT_CONNECTED, n)
     if not h then
-        cout(Ar, "[source] échec : aucun holder n'a accepté d'incrémenter " .. STAT_CONNECTED ..
-                 ". Charge d'abord le Bastion (là où l'on branche les sources) puis réessaie.")
+        cout(Ar, "[source] failed: no holder accepted an increment of " .. STAT_CONNECTED ..
+                 ". Load the Bastion first (where the sources get connected), then try again.")
         return true
     end
-    cout(Ar, string.format("[source] +%d → %.0f / %d source(s) branchée(s) (avant : %.0f).",
+    cout(Ar, string.format("[source] +%d -> %.0f / %d source(s) connected (was: %.0f).",
         n, after, GOAL, before))
     if after >= GOAL and before < GOAL then
-        cout(Ar, "[source] ≥ 12 → condition du FinalFight remplie.")
+        cout(Ar, "[source] >= 12 -> FinalFight condition met.")
     end
     return true
 end)
 
-log("Chargé. Console in-game (F10) : source | source <n> | source set <n> | source status")
+log("loaded. In-game console (F10): source | source <n> | source set <n> | source status")

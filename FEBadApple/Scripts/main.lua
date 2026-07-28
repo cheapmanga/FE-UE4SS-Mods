@@ -25,7 +25,7 @@
 --     badapple set mat alienware    dark pixels: the material of the
 --                                   ALIENWARE chest, applied to the cubes
 --     badapple set class chest      pixels = real ALIENWARE chests, stretched
---     badapple video [chemin]  hijack the game's media player (route 2)
+--     badapple video [path]    hijack the game's media player (route 2)
 --     badapple video stop
 --
 --  PLACEMENT: the screen is raised in front of YOU, at `dist` uu, centered at `height` uu
@@ -153,7 +153,7 @@ local function GetViewYaw(pawn)
         for _, c in pairs(cs) do
             if c and c:IsValid() and isRealActor(c.Pawn) then
                 local r = try(function() return c:GetControlRotation() end)
-                if r and r.Yaw then return r.Yaw, "controle" end
+                if r and r.Yaw then return r.Yaw, "control" end
                 local cam = try(function() return c.PlayerCameraManager end)
                 if cam and cam:IsValid() then
                     local cr = try(function() return cam:GetCameraRotation() end)
@@ -214,13 +214,13 @@ local function applyCleanGfx(Ar, on)
     if on then
         Console("r.MotionBlur.Amount 0")
         Console("r.MotionBlurQuality 0")
-        if Ar then say(Ar, "motion blur coupe.") end
+        if Ar then say(Ar, "motion blur cut.") end
     else
         Console("r.MotionBlur.Amount 0.5")
         Console("r.MotionBlurQuality 4")
         Console("r.AntiAliasingMethod 4")               -- in case a test had changed it
         Console("r.TemporalAACurrentFrameWeight 0.04")
-        if Ar then say(Ar, "effets graphiques par defaut restaures.") end
+        if Ar then say(Ar, "default graphics effects restored.") end
     end
 end
 
@@ -251,15 +251,15 @@ local function loadData(Ar)
     if DATA then return true end
     local meta = loadModule("data.badapple_meta")
     if not meta then
-        say(Ar, "donnees introuvables : Scripts/data/badapple_meta.lua")
-        say(Ar, "genere-les avec badapple/make_badapple_data.py")
+        say(Ar, "data not found: Scripts/data/badapple_meta.lua")
+        say(Ar, "generate it with badapple/make_badapple_data.py")
         return false
     end
     local chunks = {}
     for c = 1, meta.chunks do
         local ch = loadModule(("data.badapple_%02d"):format(c))
         if not ch then
-            say(Ar, ("morceau %d/%d manquant"):format(c, meta.chunks))
+            say(Ar, ("chunk %d/%d missing"):format(c, meta.chunks))
             return false
         end
         chunks[c] = ch
@@ -267,11 +267,11 @@ local function loadData(Ar)
     local DEC = {}
     for i = 1, #meta.alphabet do DEC[meta.alphabet:byte(i)] = i - 1 end
     DATA = { meta = meta, chunks = chunks, DEC = DEC }
-    say(Ar, ("donnees : %dx%d, %d images a %d i/s (%.0f s), %d rects max"):format(
+    say(Ar, ("data: %dx%d, %d frames at %d fps (%.0f s), %d rects max"):format(
         meta.w, meta.h, meta.frames, meta.fps, meta.frames / meta.fps, meta.maxRects))
     if CFG.pool < meta.maxRects then
         CFG.pool = meta.maxRects
-        say(Ar, "pool ajuste a " .. CFG.pool)
+        say(Ar, "pool adjusted to " .. CFG.pool)
     end
     return true
 end
@@ -298,7 +298,7 @@ local SCREEN = nil
 
 local function buildScreen(pawn, Ar)
     local loc = ProbeLocation(pawn)
-    if not loc then say(Ar, "position du joueur illisible"); return false end
+    if not loc then say(Ar, "player position unreadable"); return false end
     local yaw, ysrc = GetViewYaw(pawn)
     local yr  = math.rad(yaw)
     local fx, fy = math.cos(yr), math.sin(yr)      -- forward
@@ -309,7 +309,7 @@ local function buildScreen(pawn, Ar)
         cz = loc.Z + CFG.height,
         rx = rx, ry = ry, fx = fx, fy = fy, yaw = yaw,
     }
-    say(Ar, ("ecran monte a %.0f uu devant toi (yaw %.0f, source %s), %d x %d cellules de %.0f uu"):format(
+    say(Ar, ("screen raised %.0f uu in front of you (yaw %.0f, source %s), %d x %d cells of %.0f uu"):format(
         CFG.dist, yaw, ysrc, DATA.meta.w, DATA.meta.h, CFG.cell))
     return true
 end
@@ -345,7 +345,7 @@ local function resolveMesh(Ar)
     if CFG.mesh ~= "" then
         local m = try(function() return StaticFindObject(CFG.mesh) end)
         if m and m:IsValid() then return m, CFG.mesh end
-        say(Ar, "mesh force introuvable : " .. CFG.mesh)
+        say(Ar, "forced mesh not found: " .. CFG.mesh)
     end
     for _, p in ipairs(MESH_CANDIDATES) do
         local m = try(function() return StaticFindObject(p) end)
@@ -380,7 +380,7 @@ local function resolveEnemyClass(Ar)
         local p = CLASS_PRESETS[CFG.class:lower()] or CFG.class
         local c = try(function() return StaticFindObject(p) end)
         if c and c:IsValid() then return c, p end
-        say(Ar, "classe forcee introuvable : " .. p)
+        say(Ar, "forced class not found: " .. p)
     end
     local all = try(function() return FindAllOf("BP_EnemyBase_C") end)
     if all then
@@ -404,7 +404,7 @@ local POOL, POOL_KIND = {}, nil
 local function spawnActor(cls, loc, yaw)
     local GS = try(UEHelpers.GetGameplayStatics)
     local world = GetWorldCtx()
-    if not (GS and world and cls) then return nil, "GameplayStatics/World/classe absents" end
+    if not (GS and world and cls) then return nil, "GameplayStatics/World/class missing" end
 
     local yr = math.rad(yaw or 0)
     local t = {
@@ -423,10 +423,10 @@ local function spawnActor(cls, loc, yaw)
         -- nested structs; an empty table gives a null transform,
         -- which we fix right after with K2_SetActorLocation.
         a = try(function() return GS:BeginDeferredActorSpawnFromClass(world, cls, {}, 1, nil, 0) end)
-        if not (a and a:IsValid()) then return nil, "BeginDeferredActorSpawnFromClass a echoue" end
+        if not (a and a:IsValid()) then return nil, "BeginDeferredActorSpawnFromClass failed" end
         try(function() GS:FinishSpawningActor(a, {}, 0) end)
         try(function() a:K2_SetActorLocation(loc, false, {}, true) end)
-        return a, "transformee vide + repositionnement"
+        return a, "empty transform + reposition"
     end
     try(function() GS:FinishSpawningActor(a, t, 0) end)
     return a, "ok"
@@ -539,7 +539,7 @@ local function buildBackdrop(mesh, Ar)
         if mat and mat:IsValid() then matPath = MAT_PRESETS.blackgame end
     end
     if not (mat and mat:IsValid()) then
-        say(Ar, "materiau de fond introuvable (" .. matPath .. ") -> pas de fond")
+        say(Ar, "background material not found (" .. matPath .. ") -> no background")
         return
     end
 
@@ -553,7 +553,7 @@ local function buildBackdrop(mesh, Ar)
                   Y = SCREEN.cy + SCREEN.fy * back,
                   Z = SCREEN.cz }
     local a, how = spawnActor(cls, loc, SCREEN.yaw)
-    if not a then say(Ar, "spawn du fond a echoue : " .. tostring(how)); return end
+    if not a then say(Ar, "background spawn failed: " .. tostring(how)); return end
 
     -- We reuse dressCube (nav/collision cut) but WITHOUT its pixel
     -- material: we force the background material right after.
@@ -570,7 +570,7 @@ local function buildBackdrop(mesh, Ar)
     try(function() a:K2_SetActorLocation(loc, false, {}, true) end)
     try(function() a:SetActorHiddenInGame(false) end)
     BACKDROP = a
-    say(Ar, "fond noir : " .. matPath)
+    say(Ar, "black background: " .. matPath)
 end
 
 local function buildPool(kind, n, Ar)
@@ -581,35 +581,35 @@ local function buildPool(kind, n, Ar)
     if kind == "enemies" then
         cls, label = resolveEnemyClass(Ar)
         if not cls then
-            say(Ar, "aucun ennemi charge dans la zone : impossible de recuperer une classe.")
-            say(Ar, "va dans une zone avec des ennemis, ou `badapple set class <chemin>`.")
+            say(Ar, "no enemy loaded in this area: cannot grab a class.")
+            say(Ar, "go to an area with enemies, or `badapple set class <path>`.")
             return false
         end
-        say(Ar, "classe des pixels : " .. tostring(label))
+        say(Ar, "pixel class: " .. tostring(label))
     elseif CFG.class ~= "" then
         -- Pixels = whole actors (chests...). They bring their own
         -- rendering: we assign them no mesh, we stretch them as-is.
         local p = CLASS_PRESETS[CFG.class:lower()] or CFG.class
         cls = try(function() return StaticFindObject(p) end)
         if not (cls and cls:IsValid()) then
-            say(Ar, "classe introuvable (pas chargee dans cette zone ?) : " .. p)
-            say(Ar, "les coffres ne sont charges que dans une zone qui en contient.")
+            say(Ar, "class not found (not loaded in this area?): " .. p)
+            say(Ar, "chests are only loaded in an area that contains some.")
             return false
         end
         mesh, label = nil, p
-        say(Ar, "pixels = acteurs " .. p)
+        say(Ar, "pixels = actors " .. p)
     else
         cls = try(function() return StaticFindObject(SMA_CLASS) end)
         if not (cls and cls:IsValid()) then
-            say(Ar, "classe StaticMeshActor introuvable"); return false
+            say(Ar, "StaticMeshActor class not found"); return false
         end
         mesh, label = resolveMesh(Ar)
         if not mesh then
-            say(Ar, "aucun UStaticMesh utilisable trouve. Charge un niveau, ou "
+            say(Ar, "no usable UStaticMesh found. load a level, or "
                  .. "`badapple set mesh /Engine/BasicShapes/Cube.Cube`.")
             return false
         end
-        say(Ar, "mesh des pixels : " .. tostring(label))
+        say(Ar, "pixel mesh: " .. tostring(label))
     end
 
     MAT_OBJ = nil
@@ -618,10 +618,10 @@ local function buildPool(kind, n, Ar)
         local m = try(function() return StaticFindObject(p) end)
         if m and m:IsValid() then
             MAT_OBJ = m
-            say(Ar, "materiau des pixels : " .. p)
+            say(Ar, "pixel material: " .. p)
         else
-            say(Ar, "materiau introuvable (pas charge dans cette zone ?) : " .. p)
-            say(Ar, "-> les pixels garderont le materiau du mesh")
+            say(Ar, "material not found (not loaded in this area?): " .. p)
+            say(Ar, "-> pixels will keep the mesh material")
         end
     end
 
@@ -629,7 +629,7 @@ local function buildPool(kind, n, Ar)
     for i = 1, n do
         local a, err = spawnActor(cls, origin, SCREEN.yaw)
         if not a then
-            say(Ar, ("spawn %d/%d a echoue : %s"):format(i, n, tostring(err)))
+            say(Ar, ("spawn %d/%d failed: %s"):format(i, n, tostring(err)))
             if i == 1 then return false end
             break
         end
@@ -641,7 +641,7 @@ local function buildPool(kind, n, Ar)
     end
 
     POOL_KIND = kind
-    say(Ar, ("%d acteurs prets (%s)"):format(#POOL, tostring(how)))
+    say(Ar, ("%d actors ready (%s)"):format(#POOL, tostring(how)))
 
     -- Black background: a cube mesh is needed even in enemies/chests mode (where
     -- `mesh` may be nil because the actors bring their own rendering).
@@ -819,20 +819,20 @@ end
 local function ismBuild(mesh, matObj, Ar)
     ismDestroy()
     local hostCls = try(function() return StaticFindObject(SMA_CLASS) end)
-    if not (hostCls and hostCls:IsValid()) then say(Ar, "ISM: StaticMeshActor introuvable"); return false end
+    if not (hostCls and hostCls:IsValid()) then say(Ar, "ISM: StaticMeshActor not found"); return false end
     local origin = { X = SCREEN.cx, Y = SCREEN.cy, Z = SCREEN.cz }
     local host = spawnActor(hostCls, origin, SCREEN.yaw)
-    if not host then say(Ar, "ISM: spawn de l'hote a echoue"); return false end
+    if not host then say(Ar, "ISM: host spawn failed"); return false end
     ISM.host = host
 
     local ismCls = try(function() return StaticFindObject(ISM_CLASS) end)
-    if not (ismCls and ismCls:IsValid()) then say(Ar, "ISM: classe composant introuvable"); return false end
+    if not (ismCls and ismCls:IsValid()) then say(Ar, "ISM: component class not found"); return false end
     local idt = { Rotation = { X = 0, Y = 0, Z = 0, W = 1 },
                   Translation = { X = 0, Y = 0, Z = 0 },
                   Scale3D = { X = 1, Y = 1, Z = 1 } }
     -- bManualAttachment=false (attaches to the root), bDeferredFinish=false (ready right away)
     local comp = try(function() return host:AddComponentByClass(ismCls, false, idt, false) end)
-    if not (comp and comp:IsValid()) then say(Ar, "ISM: AddComponentByClass a echoue"); return false end
+    if not (comp and comp:IsValid()) then say(Ar, "ISM: AddComponentByClass failed"); return false end
     ISM.comp = comp
 
     try(function() comp:SetStaticMesh(mesh) end)
@@ -849,7 +849,7 @@ local function ismBuild(mesh, matObj, Ar)
     ISM_PREV = {}                       -- all instances start "collapsed"
     for idx = 0, CFG.pool - 1 do ISM_PREV[idx] = "c" end
     local cnt = try(function() return comp:GetInstanceCount() end) or 0
-    say(Ar, ("ISM pret : %d instances (1 seul draw call, zero trainee)"):format(cnt))
+    say(Ar, ("ISM ready: %d instances (single draw call, zero smearing)"):format(cnt))
     return cnt > 0
 end
 
@@ -967,7 +967,7 @@ local function tickFrame()
         if CFG.loop == 1 then
             PLAY.t0 = t; idx = 1
         else
-            log("fin de la video")
+            log("end of video")
             stopPlayback()
             return
         end
@@ -980,7 +980,7 @@ local function tickFrame()
         -- loop is still running -> it's the ISM rendering. If it stops, the loop
         -- is dead. That's the freeze diagnostic.
         PLAY.renders = (PLAY.renders or 0) + 1
-        if PLAY.renders % 90 == 0 then log("battement : image " .. idx .. "/" .. m.frames) end
+        if PLAY.renders % 90 == 0 then log("heartbeat: frame " .. idx .. "/" .. m.frames) end
         -- Rolling sweep (actors mode only; the ISM has no ghosts).
         if POOL_KIND ~= "ism" and CFG.resync > 0 then
             healSlice(math.max(1, math.ceil(#POOL / CFG.resync)))
@@ -1016,7 +1016,7 @@ local function gameTick()
     local ok, err = pcall(tickFrame)
     if not ok then
         PLAY.on = false
-        log("erreur de rendu, lecture arretee : " .. tostring(err))
+        log("render error, playback stopped: " .. tostring(err))
     end
 end
 
@@ -1067,7 +1067,7 @@ end
 
 local function hijackVideo(Ar)
     local players = findPlayers()
-    if #players == 0 then say(Ar, "aucun lecteur media charge (es-tu au menu ?)"); return end
+    if #players == 0 then say(Ar, "no media player loaded (are you at the menu?)"); return end
     local ok = 0
     for _, p in ipairs(players) do
         local n = tostring(try(function() return p:GetFName():ToString() end))
@@ -1083,9 +1083,9 @@ local function hijackVideo(Ar)
         try(function() p:SetLooping(true) end)
         try(function() p:Play() end)
         if opened ~= false then ok = ok + 1 end
-        say(Ar, "  " .. n .. " : " .. (opened == false and "refuse" or "ouvert"))
+        say(Ar, "  " .. n .. " : " .. (opened == false and "refused" or "opened"))
     end
-    say(Ar, ok .. "/" .. #players .. " lecteur(s) sur " .. CFG.video)
+    say(Ar, ok .. "/" .. #players .. " player(s) on " .. CFG.video)
 end
 
 local function restoreVideo(Ar)
@@ -1094,7 +1094,7 @@ local function restoreVideo(Ar)
         local u = savedUrls[n]
         if u and u ~= "" then
             try(function() p:OpenUrl(u) end); try(function() p:Play() end)
-            say(Ar, "  " .. n .. " restaure")
+            say(Ar, "  " .. n .. " restored")
         else
             try(function() p:Close() end)
         end
@@ -1102,35 +1102,35 @@ local function restoreVideo(Ar)
 end
 
 -- ---------------------------------------------------------------------------
---  Commandes
+--  Commands
 -- ---------------------------------------------------------------------------
 local function cmdTest(Ar)
     local pawn = GetPawn()
-    if not pawn then say(Ar, "joueur introuvable"); return end
+    if not pawn then say(Ar, "player not found"); return end
     if not loadData(Ar) then return end
     if not buildScreen(pawn, Ar) then return end
 
     local mesh, label = resolveMesh(Ar)
-    say(Ar, "mesh : " .. tostring(label or "AUCUN"))
+    say(Ar, "mesh: " .. tostring(label or "NONE"))
     if not mesh then return end
 
     local cls = try(function() return StaticFindObject(SMA_CLASS) end)
-    say(Ar, "classe StaticMeshActor : " .. (cls and cls:IsValid() and "ok" or "INTROUVABLE"))
+    say(Ar, "StaticMeshActor class: " .. (cls and cls:IsValid() and "ok" or "NOT FOUND"))
     if not (cls and cls:IsValid()) then return end
 
     local loc = { X = SCREEN.cx, Y = SCREEN.cy, Z = SCREEN.cz }
     local a, how = spawnActor(cls, loc, SCREEN.yaw)
-    say(Ar, "spawn : " .. tostring(how))
+    say(Ar, "spawn: " .. tostring(how))
     if not a then return end
 
     local hasSmc = dressCube(a, mesh, SCREEN.yaw)
-    say(Ar, "composant StaticMesh : " .. (hasSmc and "ok" or "ABSENT"))
+    say(Ar, "StaticMesh component: " .. (hasSmc and "ok" or "MISSING"))
     try(function() a:SetActorScale3D({ X = 5.0, Y = 5.0, Z = 5.0 }) end)
     try(function() a:SetActorHiddenInGame(false) end)
-    say(Ar, ("un cube devrait etre visible a %.0f uu devant toi, %.0f uu en hauteur.")
+    say(Ar, ("a cube should be visible %.0f uu in front of you, %.0f uu up.")
         :format(CFG.dist, CFG.height))
-    say(Ar, "rien ? -> `badapple set dist 1500`, `badapple set height 300`, puis retente.")
-    say(Ar, "`badapple stop` le detruira avec le reste.")
+    say(Ar, "nothing? -> `badapple set dist 1500`, `badapple set height 300`, then retry.")
+    say(Ar, "`badapple stop` will destroy it along with the rest.")
     POOL[#POOL + 1] = { actor = a, x = -1, y = -1, w = -1, h = -1, hidden = false }
 end
 
@@ -1139,45 +1139,45 @@ end
 -- if it really is being drawn.
 local function cmdProbe(Ar)
     local pawn = GetPawn()
-    if not pawn then say(Ar, "joueur introuvable"); return end
+    if not pawn then say(Ar, "player not found"); return end
     local loc = ProbeLocation(pawn)
-    if not loc then say(Ar, "position du joueur illisible"); return end
+    if not loc then say(Ar, "player position unreadable"); return end
     local prot = try(function() return pawn:K2_GetActorRotation() end)
     local vyaw, vsrc = GetViewYaw(pawn)
-    say(Ar, ("joueur : X=%.0f Y=%.0f Z=%.0f"):format(loc.X, loc.Y, loc.Z))
-    say(Ar, ("yaw pawn=%.0f | yaw vue=%.0f (%s)"):format((prot and prot.Yaw) or 0, vyaw, vsrc))
+    say(Ar, ("player: X=%.0f Y=%.0f Z=%.0f"):format(loc.X, loc.Y, loc.Z))
+    say(Ar, ("pawn yaw=%.0f | view yaw=%.0f (%s)"):format((prot and prot.Yaw) or 0, vyaw, vsrc))
 
     local mesh, mlabel = resolveMesh(Ar)
-    if not mesh then say(Ar, "AUCUN mesh utilisable"); return end
-    say(Ar, "mesh : " .. tostring(mlabel))
+    if not mesh then say(Ar, "NO usable mesh"); return end
+    say(Ar, "mesh: " .. tostring(mlabel))
 
     local cls = try(function() return StaticFindObject(SMA_CLASS) end)
-    if not (cls and cls:IsValid()) then say(Ar, "classe StaticMeshActor introuvable"); return end
+    if not (cls and cls:IsValid()) then say(Ar, "StaticMeshActor class not found"); return end
 
     local yr = math.rad(vyaw)
     local dest = { X = loc.X + math.cos(yr) * 400.0,
                    Y = loc.Y + math.sin(yr) * 400.0,
                    Z = loc.Z + 150.0 }
     local a, how = spawnActor(cls, dest, vyaw)
-    if not a then say(Ar, "spawn KO : " .. tostring(how)); return end
-    say(Ar, "spawn : " .. tostring(how))
+    if not a then say(Ar, "spawn failed: " .. tostring(how)); return end
+    say(Ar, "spawn: " .. tostring(how))
 
     local smc = meshComponent(a)
-    say(Ar, "composant de rendu : " .. (smc and "trouve" or "ABSENT"))
+    say(Ar, "render component: " .. (smc and "found" or "MISSING"))
     if not smc then return end
 
     local mobBefore = try(function() return smc.Mobility end)
     local okMob = pcall(function() a:SetMobility(2) end)
     local mobAfter = try(function() return smc.Mobility end)
-    say(Ar, ("mobility : avant=%s appel=%s apres=%s   (2 = Movable)")
+    say(Ar, ("mobility: before=%s call=%s after=%s   (2 = Movable)")
         :format(tostring(mobBefore), tostring(okMob), tostring(mobAfter)))
 
     local callOk, ret = pcall(function() return smc:SetStaticMesh(mesh) end)
     local assigned = try(function() return smc.StaticMesh end)
-    say(Ar, ("SetStaticMesh : appel=%s retour=%s -> StaticMesh=%s")
+    say(Ar, ("SetStaticMesh: call=%s return=%s -> StaticMesh=%s")
         :format(tostring(callOk), tostring(ret),
                 assigned and tostring(try(function() return assigned:GetFName():ToString() end))
-                          or "NUL  <<< la cause si c'est NUL"))
+                          or "NULL  <<< the cause if it is NULL"))
 
     pcall(function() a:SetActorScale3D({ X = 3.0, Y = 3.0, Z = 3.0 }) end)
     pcall(function() a:SetActorHiddenInGame(false) end)
@@ -1186,34 +1186,34 @@ local function cmdProbe(Ar)
 
     local rloc = ProbeLocation(a)
     local rsc  = try(function() return a:GetActorScale3D() end)
-    say(Ar, ("demande : X=%.0f Y=%.0f Z=%.0f"):format(dest.X, dest.Y, dest.Z))
-    say(Ar, ("relu    : X=%.0f Y=%.0f Z=%.0f  echelle=%s")
+    say(Ar, ("requested : X=%.0f Y=%.0f Z=%.0f"):format(dest.X, dest.Y, dest.Z))
+    say(Ar, ("read back : X=%.0f Y=%.0f Z=%.0f  scale=%s")
         :format(rloc and rloc.X or 0, rloc and rloc.Y or 0, rloc and rloc.Z or 0,
                 rsc and ("%.1f"):format(rsc.X) or "?"))
-    say(Ar, ("visibilite : bHidden=%s bVisible=%s bHiddenInGame=%s IsVisible=%s")
+    say(Ar, ("visibility: bHidden=%s bVisible=%s bHiddenInGame=%s IsVisible=%s")
         :format(tostring(try(function() return a.bHidden end)),
                 tostring(try(function() return smc.bVisible end)),
                 tostring(try(function() return smc.bHiddenInGame end)),
                 tostring(try(function() return smc:IsVisible() end))))
-    say(Ar, "materiau 0 : " .. tostring(try(function()
+    say(Ar, "material 0: " .. tostring(try(function()
         local m = smc:GetMaterial(0)
-        return m and m:GetFName():ToString() or "NUL"
+        return m and m:GetFName():ToString() or "NULL"
     end)))
 
-    say(Ar, "un cube de 3 m est cense etre a 4 m devant la camera, hauteur torse.")
-    say(Ar, "verdict du moteur dans 1 s (regarde le log UE4SS)...")
+    say(Ar, "a 3 m cube should be 4 m in front of the camera, at chest height.")
+    say(Ar, "engine verdict in 1 s (watch the UE4SS log)...")
     -- WasRecentlyRendered is the ONLY proof that the engine really drew it.
     -- Ar is dead past this point: we only log through log() from now on.
     -- ExecuteWithDelay already runs on the game thread: no nesting with
     -- ExecuteInGameThread (cf. the warning about the cadence further down).
     ExecuteWithDelay(1200, function()
-        if not (a and a:IsValid()) then log("l'acteur a disparu entre-temps") return end
+        if not (a and a:IsValid()) then log("the actor vanished in the meantime") return end
         local seen = try(function() return a:WasRecentlyRendered(1.0) end)
         log("WasRecentlyRendered = " .. tostring(seen))
         if seen == true then
-            log("-> le moteur le DESSINE : le probleme est le cadrage/l'echelle, pas le rendu.")
+            log("-> the engine IS DRAWING it: the problem is framing/scale, not rendering.")
         else
-            log("-> le moteur ne le dessine PAS : mesh nul, materiau, ou hors champ.")
+            log("-> the engine is NOT drawing it: null mesh, material, or out of frame.")
         end
     end)
     POOL[#POOL + 1] = { actor = a, x = -1, y = -1, w = -1, h = -1, hidden = false }
@@ -1221,7 +1221,7 @@ end
 
 local function cmdPlay(Ar, kind)
     local pawn = GetPawn()
-    if not pawn then say(Ar, "joueur introuvable"); return end
+    if not pawn then say(Ar, "player not found"); return end
     if not loadData(Ar) then return end
     if not buildScreen(pawn, Ar) then return end
     ismDestroy()   -- clears any ISM left over from a previous playback
@@ -1231,7 +1231,7 @@ local function cmdPlay(Ar, kind)
     if kind == "ism" then
         destroyPool()   -- in case an actor pool was running
         local mesh = resolveMesh(Ar)
-        if not mesh then say(Ar, "ISM: aucun mesh cube utilisable"); return end
+        if not mesh then say(Ar, "ISM: no usable cube mesh"); return end
         local matObj = nil
         if CFG.mat ~= "" then
             local p = MAT_PRESETS[CFG.mat:lower()] or CFG.mat
@@ -1243,9 +1243,9 @@ local function cmdPlay(Ar, kind)
     else
         local n = (kind == "enemies") and math.min(CFG.pool, DATA.meta.lowW * DATA.meta.lowH) or CFG.pool
         if kind == "enemies" then
-            say(Ar, "mode ennemis : " .. DATA.meta.lowW .. "x" .. DATA.meta.lowH
-                 .. " cellules, jusqu'a " .. n .. " ennemis a l'ecran. Ca va ramer, c'est le jeu.")
-            say(Ar, "trop lent ? `badapple stop`, `badapple set pool 64`, puis relance.")
+            say(Ar, "enemies mode: " .. DATA.meta.lowW .. "x" .. DATA.meta.lowH
+                 .. " cells, up to " .. n .. " enemies on screen. it will lag, that's the deal.")
+            say(Ar, "too slow? `badapple stop`, `badapple set pool 64`, then start again.")
         end
         if not buildPool(kind or "cubes", n, Ar) then return end
     end
@@ -1273,11 +1273,11 @@ local function cmdPlay(Ar, kind)
     local drawn = renderFrame(probeIdx)
     startChain()
     applyCleanGfx(Ar, true)   -- cuts motion blur + temporal AA (anti-trailing)
-    say(Ar, ("lecture lancee (%s). Mire : image %d, %d rectangles."):format(
+    say(Ar, ("playback started (%s). test pattern: frame %d, %d rectangles."):format(
         kind or "cubes", probeIdx, drawn))
-    say(Ar, "Elle doit disparaitre aussitot (la video ouvre sur 1,4 s de noir).")
-    say(Ar, "Elle reste FIGEE ? -> le hook EngineTick d'UE4SS a saute : redemarre le jeu.")
-    say(Ar, "Sinon lance badapple_audio.mp4 maintenant. `badapple stop` pour tout detruire.")
+    say(Ar, "it should vanish immediately (the video opens on 1.4 s of black).")
+    say(Ar, "still FROZEN? -> UE4SS's EngineTick hook is gone: restart the game.")
+    say(Ar, "otherwise launch badapple_audio.mp4 now. `badapple stop` to destroy everything.")
 end
 
 -- Render diagnostic: compares what SHOULD be on screen (data) with what really
@@ -1288,12 +1288,12 @@ local function cmdStat(Ar)
         local r = frameStrings(idx)
         local expected = r and (#r / (4 * DATA.meta.charsPerField)) or 0
         local cnt = (ISM.comp and ISM.comp:IsValid()) and try(function() return ISM.comp:GetInstanceCount() end) or 0
-        say(Ar, ("mode ISM : image %d, %d rectangles attendus, %d instances dans le composant")
+        say(Ar, ("ISM mode: frame %d, %d rectangles expected, %d instances in the component")
             :format(idx, math.floor(expected), cnt or 0))
-        say(Ar, "en ISM il n'y a pas de fantome possible (1 composant, instances collapsees).")
+        say(Ar, "in ISM no ghost is possible (1 component, collapsed instances).")
         return
     end
-    if not (DATA and #POOL > 0) then say(Ar, "rien en cours (lance `badapple play`)"); return end
+    if not (DATA and #POOL > 0) then say(Ar, "nothing running (use `badapple play`)"); return end
     local idx = PLAY.last
     local r = frameStrings(idx)
     local expected = 0
@@ -1321,35 +1321,35 @@ local function cmdStat(Ar)
             invalid = invalid + 1
         end
     end
-    say(Ar, ("image %d : %d rectangles attendus, mod pense %d visibles"):format(
+    say(Ar, ("frame %d: %d rectangles expected, mod thinks %d visible"):format(
         idx, math.floor(expected), flagVis))
-    say(Ar, ("caches : %d gares(hors champ) + %d masques-non-gares + %d FANTOMES-visibles ; invalides=%d")
+    say(Ar, ("hidden: %d parked(out of frame) + %d masked-not-parked + %d visible-GHOSTS ; invalid=%d")
         :format(hidParked, hidVis, hidStuck, invalid))
     if hidStuck > 0 then
-        say(Ar, ("-> %d cube(s) FANTOME visibles : le garage echoue. C'est le vrai bug."):format(hidStuck))
+        say(Ar, ("-> %d visible GHOST cube(s): parking is failing. that's the real bug."):format(hidStuck))
     elseif hidVis > 0 then
-        say(Ar, ("-> %d caches non gares mais masques : OK SI SetActorHiddenInGame cache vraiment."):format(hidVis))
-        say(Ar, "   Si tu vois quand meme des rectangles, c'est que le masquage seul ne suffit pas.")
+        say(Ar, ("-> %d hidden not parked but masked: OK IF SetActorHiddenInGame really hides."):format(hidVis))
+        say(Ar, "   if you still see rectangles, masking alone is not enough.")
     else
-        say(Ar, "-> tous les caches sont gares hors champ : aucun fantome possible.")
+        say(Ar, "-> all hidden ones are parked out of frame: no ghost possible.")
     end
-    say(Ar, ("fond present=%s"):format(tostring(BACKDROP ~= nil and BACKDROP:IsValid())))
+    say(Ar, ("background present=%s"):format(tostring(BACKDROP ~= nil and BACKDROP:IsValid())))
 end
 
 local function cmdInfo(Ar)
-    say(Ar, "etat : " .. (PLAY.on and (PLAY.paused and "en pause" or "en lecture") or "arrete")
+    say(Ar, "state: " .. (PLAY.on and (PLAY.paused and "paused" or "playing") or "stopped")
          .. "  mode=" .. tostring(POOL_KIND or "-")
-         .. "  image=" .. tostring(PLAY.last) .. "/" .. (DATA and DATA.meta.frames or "?"))
-    say(Ar, ("acteurs=%d  perdus=%d"):format(#POOL, lostActors))
+         .. "  frame=" .. tostring(PLAY.last) .. "/" .. (DATA and DATA.meta.frames or "?"))
+    say(Ar, ("actors=%d  lost=%d"):format(#POOL, lostActors))
     if PLAY.on and PLAY.last <= 1 then
-        say(Ar, "!! l'image n'a jamais avance : la boucle ne tourne pas.")
-        say(Ar, "!! le hook EngineTick d'UE4SS a ete retire par une erreur anterieure.")
-        say(Ar, "!! -> REDEMARRE LE JEU (plus aucun mod Lua ne recoit de tick).")
+        say(Ar, "!! the frame never advanced: the loop is not running.")
+        say(Ar, "!! UE4SS's EngineTick hook was removed by an earlier error.")
+        say(Ar, "!! -> RESTART THE GAME (no Lua mod receives a tick any more).")
     end
     say(Ar, ("cell=%.0f dist=%.0f height=%.0f pool=%d thickness=%.2f meshsize=%.0f loop=%d")
         :format(CFG.cell, CFG.dist, CFG.height, CFG.pool, CFG.thickness, CFG.meshsize, CFG.loop))
     say(Ar, "mesh=" .. (CFG.mesh ~= "" and CFG.mesh or "auto")
-         .. "  mat=" .. (CFG.mat ~= "" and CFG.mat or "defaut")
+         .. "  mat=" .. (CFG.mat ~= "" and CFG.mat or "default")
          .. "  class=" .. (CFG.class ~= "" and CFG.class or "StaticMeshActor"))
     say(Ar, "video (route 2) = " .. CFG.video)
 end
@@ -1359,17 +1359,17 @@ RegisterConsoleCommandHandler("badapple", function(FullCommand, Parameters, Ar)
 
     if sub == "" or sub == "help" then
         say(Ar, "test | probe | play [ism|enemies] | pause | resume | stop | frame <n> | info | stat")
-        say(Ar, "play ism = mode InstancedStaticMesh : ZERO trainee (recommande si tu vois des restes)")
-        say(Ar, "gfx on|off  = effets par defaut / mode propre (anti-trainee)")
-        say(Ar, "aa <0|1|2|4> = anti-aliasing (0/1 sans trainee, 4 = defaut du jeu)")
-        say(Ar, "probe = diagnostic complet : cube a 4 m devant la CAMERA + relecture de tout")
-        say(Ar, "set <cell|dist|height|pool|thickness|meshsize|enemycell|bgpad|resync|loop> <nombre>")
-        say(Ar, "set bg black|none      fond noir derriere l'image (defaut black)")
-        say(Ar, "set mat alienware      pixels sombres (materiau du coffre ALIENWARE)")
-        say(Ar, "set class chest        pixels = vrais coffres ALIENWARE etires")
-        say(Ar, "set mesh|mat|class|bg <chemin>  pour un asset quelconque")
-        say(Ar, "video [chemin] | video stop")
-        say(Ar, "COMMENCE PAR `badapple test` : il spawn un seul cube et dit ce qui marche.")
+        say(Ar, "play ism = InstancedStaticMesh mode: ZERO smearing (recommended if you see leftovers)")
+        say(Ar, "gfx on|off  = default effects / clean mode (anti-smearing)")
+        say(Ar, "aa <0|1|2|4> = anti-aliasing (0/1 no smearing, 4 = game default)")
+        say(Ar, "probe = full diagnostic: cube 4 m in front of the CAMERA + read back everything")
+        say(Ar, "set <cell|dist|height|pool|thickness|meshsize|enemycell|bgpad|resync|loop> <number>")
+        say(Ar, "set bg black|none      black background behind the image (default black)")
+        say(Ar, "set mat alienware      dark pixels (material of the ALIENWARE chest)")
+        say(Ar, "set class chest        pixels = real ALIENWARE chests, stretched")
+        say(Ar, "set mesh|mat|class|bg <path>  for any asset")
+        say(Ar, "video [path] | video stop")
+        say(Ar, "START WITH `badapple test`: it spawns a single cube and reports what works.")
         return true
     end
 
@@ -1382,12 +1382,12 @@ RegisterConsoleCommandHandler("badapple", function(FullCommand, Parameters, Ar)
         return true
     end
 
-    if sub == "pause"  then PLAY.paused = true;  say(Ar, "pause");   return true end
+    if sub == "pause"  then PLAY.paused = true;  say(Ar, "paused");  return true end
     if sub == "resume" then
         -- We shift t0 to resume from the frame where we stopped.
         local t = realSeconds()
         if t and PLAY.last > 0 then PLAY.t0 = t - (PLAY.last - 1) / DATA.meta.fps end
-        PLAY.paused = false; say(Ar, "reprise"); return true
+        PLAY.paused = false; say(Ar, "resumed"); return true
     end
 
     if sub == "stop" then
@@ -1395,14 +1395,14 @@ RegisterConsoleCommandHandler("badapple", function(FullCommand, Parameters, Ar)
         destroyPool()
         ismDestroy()
         restoreVideo(Ar)
-        applyCleanGfx(Ar, false)   -- rend au jeu ses effets graphiques normaux
-        say(Ar, "arrete, acteurs detruits")
+        applyCleanGfx(Ar, false)   -- gives the game back its normal graphics effects
+        say(Ar, "stopped, actors destroyed")
         return true
     end
 
     if sub == "frame" then
         local n = tonumber(Parameters[2] or "")
-        if not n then say(Ar, "usage : badapple frame 121"); return true end
+        if not n then say(Ar, "usage: badapple frame 121"); return true end
         local pawn = GetPawn()
         if not pawn or not loadData(Ar) then return true end
         -- Nothing ready? We set up a mode (ISM running -> we keep it).
@@ -1412,7 +1412,7 @@ RegisterConsoleCommandHandler("badapple", function(FullCommand, Parameters, Ar)
         end
         n = math.max(1, math.min(DATA.meta.frames, math.floor(n)))
         local drawn = renderFrame(n)
-        say(Ar, ("image %d affichee : %d rectangles"):format(n, drawn))
+        say(Ar, ("frame %d shown: %d rectangles"):format(n, drawn))
         return true
     end
 
@@ -1425,41 +1425,41 @@ RegisterConsoleCommandHandler("badapple", function(FullCommand, Parameters, Ar)
 
     if sub == "gfx" then
         local a2 = (Parameters[2] or ""):lower()
-        applyCleanGfx(Ar, a2 == "on")   -- "on" = effets par defaut ; sinon = mode propre
+        applyCleanGfx(Ar, a2 == "on")   -- "on" = default effects; otherwise = clean mode
         return true
     end
 
     if sub == "aa" then
         local nn = tonumber(Parameters[2] or "")
-        if not nn then say(Ar, "usage : badapple aa <0=aucun|1=FXAA|2=TAA|4=TSR>"); return true end
+        if not nn then say(Ar, "usage: badapple aa <0=none|1=FXAA|2=TAA|4=TSR>"); return true end
         Console("r.AntiAliasingMethod " .. math.floor(nn))
-        say(Ar, "AntiAliasingMethod = " .. math.floor(nn) .. " (4 = defaut du jeu ; 1/0 cassent le TSR)")
+        say(Ar, "AntiAliasingMethod = " .. math.floor(nn) .. " (4 = game default ; 1/0 break TSR)")
         return true
     end
 
     -- Reduces temporal trailing WITHOUT touching the AA method (TSR intact).
     if sub == "ghost" then
         local w = tonumber(Parameters[2] or "")
-        w = w or 0.8   -- 0.04 = defaut UE ; plus haut = moins d'historique = moins de trainee
+        w = w or 0.8   -- 0.04 = UE default; higher = less history = less trailing
         Console("r.TemporalAACurrentFrameWeight " .. tostring(w))
         Console("r.TSR.History.ScreenPercentage 100")
-        say(Ar, ("poids image courante = %.2f (0.04 defaut ; ~0.8 tue la trainee)"):format(w))
+        say(Ar, ("current frame weight = %.2f (0.04 default ; ~0.8 kills the smearing)"):format(w))
         return true
     end
 
     if sub == "set" then
         local key = (Parameters[2] or ""):lower()
         local raw = FullCommand:match("^%s*badapple%s+set%s+%S+%s+(.+)$")
-        if not raw then say(Ar, "usage : badapple set dist 3000"); return true end
+        if not raw then say(Ar, "usage: badapple set dist 3000"); return true end
         raw = raw:gsub('^"(.*)"$', "%1")
         if key == "mesh" or key == "class" or key == "mat" or key == "bg" then
             CFG[key] = raw
         elseif CFG[key] ~= nil then
             local v = tonumber(raw)
-            if not v then say(Ar, "valeur numerique attendue"); return true end
+            if not v then say(Ar, "numeric value expected"); return true end
             CFG[key] = v
         else
-            say(Ar, "cle inconnue : " .. key); return true
+            say(Ar, "unknown key: " .. key); return true
         end
         say(Ar, key .. " = " .. tostring(CFG[key]))
         if key == "cell" or key == "dist" or key == "height" or key == "meshsize" then
@@ -1474,16 +1474,16 @@ RegisterConsoleCommandHandler("badapple", function(FullCommand, Parameters, Ar)
 
     if sub == "video" then
         local arg2 = (Parameters[2] or ""):lower()
-        if arg2 == "stop" then restoreVideo(Ar); say(Ar, "lecteurs restaures"); return true end
+        if arg2 == "stop" then restoreVideo(Ar); say(Ar, "players restored"); return true end
         local raw = FullCommand:match("^%s*badapple%s+video%s+(.+)$")
         if raw then CFG.video = raw:gsub("\\", "/"):gsub('^"(.*)"$', "%1") end
-        say(Ar, "detournement vers " .. CFG.video)
+        say(Ar, "hijacking to " .. CFG.video)
         hijackVideo(Ar)
         return true
     end
 
-    say(Ar, "sous-commande inconnue : " .. sub .. "  (`badapple help`)")
+    say(Ar, "unknown subcommand: " .. sub .. "  (`badapple help`)")
     return true
 end)
 
-log("charge. `badapple help` pour les commandes, `badapple test` pour valider le spawn.")
+log("loaded. `badapple help` for commands, `badapple test` to validate spawning.")

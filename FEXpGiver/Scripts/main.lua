@@ -165,11 +165,11 @@ RegisterConsoleCommandGlobalHandler("xp", function(FullCommand, Parameters, Ar)
         for _, h in ipairs(CandidateHolders()) do
             local v = ReadPoints(h)
             if v then
-                cout(Ar, string.format("[xp] solde : %.0f point(s) d'Ætherfact.", v))
+                cout(Ar, string.format("[xp] balance: %.0f Ætherfact point(s).", v))
                 return true
             end
         end
-        cout(Ar, "[xp] holder de statistiques introuvable — es-tu bien en jeu ?")
+        cout(Ar, "[xp] statistic holder not found — are you actually in game?")
         return true
     end
 
@@ -177,26 +177,26 @@ RegisterConsoleCommandGlobalHandler("xp", function(FullCommand, Parameters, Ar)
     if a1 then
         n = tonumber(a1)
         if not n or n < 1 then
-            cout(Ar, "[xp] usage : xp  |  xp <n>  |  xp status")
+            cout(Ar, "[xp] usage: xp  |  xp <n>  |  xp status")
             return true
         end
         n = math.floor(n)
     end
 
     if not GetPawn() then
-        cout(Ar, "[xp] joueur introuvable — es-tu bien en jeu (pas dans un menu) ?")
+        cout(Ar, "[xp] player not found — are you actually in game (not in a menu)?")
         return true
     end
 
     local h, before, after = GivePoints(n)
     if not h then
-        cout(Ar, "[xp] échec : aucun holder n'a accepté d'incrémenter " .. STAT ..
-                 ". Ouvre l'arbre de perks une fois puis réessaie.")
+        cout(Ar, "[xp] failed: no holder accepted an increment of " .. STAT ..
+                 ". Open the perk tree once, then try again.")
         return true
     end
-    cout(Ar, string.format("[xp] +%d → %.0f point(s) d'Ætherfact (avant : %.0f).",
+    cout(Ar, string.format("[xp] +%d -> %.0f Ætherfact point(s) (was: %.0f).",
         n, after, before))
     return true
 end)
 
-log("Chargé. Console in-game (F10) : xp  |  xp <n>  |  xp status")
+log("loaded. In-game console (F10): xp  |  xp <n>  |  xp status")
