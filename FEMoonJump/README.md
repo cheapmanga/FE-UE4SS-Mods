@@ -18,10 +18,13 @@ Copy the folder into:
 
 | Key | Mode | Effect |
 |---|---|---|
-| **F7** | MoonJump | As long as **JUMP is held**, the vertical velocity is forced upward → continuous ascent. It's the BotW moonjump. |
-| **F6** | MultiJump | `JumpMaxCount = 999` → you can re-jump in mid-air indefinitely, keeping the game's jump physics. |
+| **F3** | MoonJump | As long as **JUMP is held**, the vertical velocity is forced upward → continuous ascent. It's the BotW moonjump. |
+| **F4** | MultiJump | `JumpMaxCount = 999` → you can re-jump in mid-air indefinitely, keeping the game's jump physics. |
 
 Both can be active at the same time.
+
+> **Why F3/F4?** F6/F7 belong to FETeleport and F9/F10 to FEVoidCancel — with several
+> mods installed the same key would otherwise fire two handlers at once.
 
 
 ## How it works

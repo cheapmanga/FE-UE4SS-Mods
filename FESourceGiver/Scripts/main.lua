@@ -57,8 +57,12 @@ local function cout(Ar, msg)
 end
 
 -- real object = not a Class Default Object.
+-- /!\ o:IsValid() CRASHES if `o` is not a UObject ("attempt to call a nil
+-- value (method 'IsValid')"), so it goes through pcall like GetFullName().
 local function isReal(o)
-    if not (o and o:IsValid()) then return false end
+    if not o then return false end
+    local valid = false; pcall(function() valid = o:IsValid() end)
+    if not valid then return false end
     local fn = ""; pcall(function() fn = o:GetFullName() end)
     return not string.find(fn, "Default__", 1, true)
 end
@@ -116,7 +120,9 @@ end
 local sourceHolder = nil
 
 local function cachedHolderValid()
-    return sourceHolder and sourceHolder:IsValid() and isReal(sourceHolder)
+    -- isReal already tests IsValid under pcall, so the bare call it used to do
+    -- first was both redundant and the one place that could crash on a stale ref.
+    return sourceHolder ~= nil and isReal(sourceHolder)
 end
 
 -- Increments `stat` by n on the right holder. Returns (holder, before, after) or nil.
@@ -153,6 +159,18 @@ local function SetStat(stat, target)
         if not holderReady(h) then return nil end
         local before = ReadStat(h, stat)
         if not before then return nil end
+        -- /!\ A holder that does not know `stat` silently ignores the write and
+        -- reads back 0. So "after == target" proves nothing when the value did
+        -- not have to move (typically `source set 0`) : every holder would pass
+        -- and the FIRST one would be cached, poisoning `source status`.
+        -- In that case we first probe with a value the holder cannot already be
+        -- sitting on : only a holder that really takes the write reads it back.
+        if math.abs(before - target) < 0.001 then
+            local probe = target + 1.0
+            pcall(function() h:SetStatisticBaseValue(stat, probe) end)
+            local probed = ReadStat(h, stat)
+            if not probed or math.abs(probed - probe) >= 0.001 then return nil end
+        end
         pcall(function() h:SetStatisticBaseValue(stat, target * 1.0) end)
         local after = ReadStat(h, stat)
         -- accepted if the value indeed equals the target (and we could read it back).
