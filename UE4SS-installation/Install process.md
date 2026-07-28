@@ -9,8 +9,8 @@ The full game on Steam installs by default in a folder containing a hidden speci
 
 ## Step 1: Download and Extract UE4SS
 
-1. Download the experimental version of UE4SS:
-   **[zDEV-UE4SS_v3.0.1-1015-g4b96f82b.zip](https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental-latest/zDEV-UE4SS_v3.0.1-1015-g4b96f82b.zip)**
+1. Download the dev experimental version of UE4SS:
+   **[Be sure that you download the dev version](https://github.com/UE4SS-RE/RE-UE4SS/releases)**.
 
 2. Navigate to the game's installation directory, then open the `Win64` folder:
    `...\steamapps\common\[Game Folder Name]\UE_YGRO\Binaries\Win64\`
