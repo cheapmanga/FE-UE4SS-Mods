@@ -94,7 +94,6 @@ Available aliases:
 | `cine` | Builder (cinematic) |
 | `mannequin` | Unreal Mannequin |
 | `hat` | Rahne's hat (gag) |
-| `alien` | Alien Animal — external asset, only resolves if the custom pak is mounted in `Content\Paks\` |
 | `one` / `hero` | One (original) |
 
 An alias can also be matched by its display label. On a swap the mod purges material
