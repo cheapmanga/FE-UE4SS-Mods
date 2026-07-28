@@ -68,7 +68,7 @@ end
 local CORE_BASE = "/Game/Game/Placeable/InteractiveObjects/PortableItem/"
 local CORE_ELEMENTS = {
     waste  = { path = CORE_BASE .. "BP_PortableItem_WasteBall.BP_PortableItem_WasteBall_C",           short = "BP_PortableItem_WasteBall_C",      label = "Waste" },
-    fire   = { path = CORE_BASE .. "BP_PortableItem_LavaBall.BP_PortableItem_LavaBall_C",             short = "BP_PortableItem_LavaBall_C",       label = "Lava (feu)" },
+    fire   = { path = CORE_BASE .. "BP_PortableItem_LavaBall.BP_PortableItem_LavaBall_C",             short = "BP_PortableItem_LavaBall_C",       label = "Lava (fire)" },
     water  = { path = CORE_BASE .. "BP_PortableItem_WaterBall.BP_PortableItem_WaterBall_C",           short = "BP_PortableItem_WaterBall_C",      label = "Water" },
     glitch = { path = CORE_BASE .. "BP_PortableItem_CorruptionBall.BP_PortableItem_CorruptionBall_C", short = "BP_PortableItem_CorruptionBall_C", label = "Corruption (glitch)" },
     power  = { path = CORE_BASE .. "BP_PortableItem_Power.BP_PortableItem_Power_C",                   short = "BP_PortableItem_Power_C",          label = "PowerCore" },
@@ -92,15 +92,15 @@ end
 -- Spawns the ball in front of the player. Returns (actor, nil) or (nil, message).
 local function SpawnCoreBall(e, pawn)
     local world = UEHelpers.GetWorld()
-    if not (world and world:IsValid()) then return nil, "world introuvable." end
+    if not (world and world:IsValid()) then return nil, "world not found." end
     local GS = StaticFindObject("/Script/Engine.Default__GameplayStatics")
-    if not (GS and GS:IsValid()) then return nil, "GameplayStatics introuvable." end
+    if not (GS and GS:IsValid()) then return nil, "GameplayStatics not found." end
     local KML = StaticFindObject("/Script/Engine.Default__KismetMathLibrary")
-    if not (KML and KML:IsValid()) then return nil, "KismetMathLibrary introuvable." end
+    if not (KML and KML:IsValid()) then return nil, "KismetMathLibrary not found." end
     local cls = ResolveCoreClass(e)
     if not (cls and cls:IsValid()) then
-        return nil, "classe pas chargée (" .. e.short .. "). Approche-toi une fois d'un core " ..
-                    e.label .. " pour la charger, puis réessaie."
+        return nil, "class not loaded (" .. e.short .. "). walk up to a " ..
+                    e.label .. " core once to load it, then try again."
     end
 
     local loc = pawn:K2_GetActorLocation()
@@ -110,14 +110,14 @@ local function SpawnCoreBall(e, pawn)
     local okT = pcall(function()
         xf = KML:MakeTransform(pos, { Pitch = 0.0, Yaw = 0.0, Roll = 0.0 }, { X = 1.0, Y = 1.0, Z = 1.0 })
     end)
-    if not okT or not xf then return nil, "MakeTransform a échoué." end
+    if not okT or not xf then return nil, "MakeTransform failed." end
 
     local actor
     local okS, errS = pcall(function()
         actor = GS:BeginDeferredActorSpawnFromClass(world, cls, xf, 1, nil, 0)  -- 1 = AlwaysSpawn
     end)
-    if not okS then return nil, "spawn a levé : " .. tostring(errS) end
-    if not (actor and actor:IsValid()) then return nil, "spawn a renvoyé un acteur nul." end
+    if not okS then return nil, "spawn raised: " .. tostring(errS) end
+    if not (actor and actor:IsValid()) then return nil, "spawn returned a null actor." end
 
     for _, n in ipairs({ 3, 2 }) do   -- FinishSpawningActor: 3 args (recent UE5) or 2
         local okF = pcall(function()
@@ -133,17 +133,17 @@ RegisterConsoleCommandGlobalHandler("core", function(FullCommand, Parameters, Ar
     local key = (p[1] and string.lower(p[1])) or ""
 
     if key == "list" or key == "help" then
-        cout(Ar, "──── cores disponibles ────")
+        cout(Ar, "──── available cores ────")
         for _, k in ipairs(CORE_ORDER) do
             cout(Ar, string.format("  %-7s %s", k, CORE_ELEMENTS[k].label))
         end
-        cout(Ar, "→ core <élément> [nograb]")
+        cout(Ar, "→ core <element> [nograb]")
         return true
     end
 
     local e = CORE_ELEMENTS[key]
     if not e then
-        cout(Ar, "[core] usage : core waste|fire|water|glitch|power [nograb]  |  core list")
+        cout(Ar, "[core] usage: core waste|fire|water|glitch|power [nograb]  |  core list")
         return true
     end
     -- 'nograb': the core appears on the ground without being grabbed (to test
@@ -154,16 +154,16 @@ RegisterConsoleCommandGlobalHandler("core", function(FullCommand, Parameters, Ar
         if t == "nograb" or t == "drop" or t == "nopickup" then nograb = true end
     end
     local pawn = GetPawn()
-    if not pawn then cout(Ar, "[core] joueur introuvable."); return true end
+    if not pawn then cout(Ar, "[core] player not found."); return true end
     local actor, err = SpawnCoreBall(e, pawn)
     if not actor then cout(Ar, "[core] " .. tostring(err)); return true end
     if nograb then
-        cout(Ar, "[core] " .. e.label .. " posé devant toi (non attrapé).")
+        cout(Ar, "[core] " .. e.label .. " dropped in front of you (not grabbed).")
     else
         pcall(function() pawn:StartGrab(actor) end)
-        cout(Ar, "[core] " .. e.label .. " donné.")
+        cout(Ar, "[core] " .. e.label .. " given.")
     end
     return true
 end)
 
-log("Chargé. Console in-game (F10) : core waste|fire|water|glitch|power [nograb]")
+log("loaded. in-game console (F10): core waste|fire|water|glitch|power [nograb]")

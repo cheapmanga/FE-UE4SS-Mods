@@ -147,11 +147,11 @@ end
 -- (CharacterMesh0, on SK_Hero_facial).
 local function GetMesh()
     local pawn = GetPawn()
-    if not pawn then return nil, "joueur introuvable" end
+    if not pawn then return nil, "player not found" end
     local m
     pcall(function() m = pawn.Mesh end)
     if okObj(m) then return m, nil end
-    return nil, "composant Mesh introuvable sur le pawn"
+    return nil, "Mesh component not found on the pawn"
 end
 
 -- ⚠️ An asset whose character is NOT present in the area is not loaded into
@@ -185,7 +185,7 @@ local function ReadSlots()
     if not mesh then return nil, err end
     local n = 0
     pcall(function() n = mesh:GetNumMaterials() end)
-    if n == 0 then return nil, "aucun slot matériau (mesh pas encore initialisé ?)" end
+    if n == 0 then return nil, "no material slot (mesh not initialized yet?)" end
 
     local slots = {}
     for i = 0, n - 1 do                       -- engine index: 0-based
@@ -210,7 +210,7 @@ local function RememberOriginal(slots)
     if original then return end
     original = {}
     for _, s in ipairs(slots) do original[s.index] = s.mat end
-    log("matériaux d'origine mémorisés (" .. #slots .. " slots)")
+    log("original materials saved (" .. #slots .. " slots)")
 end
 
 -- ---------------------------------------------------------------------------
@@ -230,9 +230,9 @@ local function ApplySkin(n)
     for _, p in ipairs(PARTS) do
         local path = SKIN_BASE .. n .. "/" .. p.asset .. n
         local m = Resolve(path)
-        if m then mats[p.key] = m else log("  introuvable : " .. path) end
+        if m then mats[p.key] = m else log("  not found: " .. path) end
     end
-    if not next(mats) then return false, "aucun matériau du Skin" .. n .. " n'a pu être chargé" end
+    if not next(mats) then return false, "no material of Skin" .. n .. " could be loaded" end
 
     local applied, skipped = 0, 0
     for _, s in ipairs(slots) do
@@ -241,19 +241,19 @@ local function ApplySkin(n)
             if pcall(function() mesh:SetMaterial(s.index, target) end) then
                 applied = applied + 1
             else
-                log("  échec SetMaterial sur le slot " .. s.index)
+                log("  SetMaterial failed on slot " .. s.index)
             end
         else
             skipped = skipped + 1
         end
     end
-    if applied == 0 then return false, "aucun slot n'a pu être associé (fais 'skin slots')" end
+    if applied == 0 then return false, "no slot could be matched (try 'skin slots')" end
     current = n
-    return true, applied .. " slot(s) appliqué(s), " .. skipped .. " ignoré(s)"
+    return true, applied .. " slot(s) applied, " .. skipped .. " skipped"
 end
 
 local function ResetSkin()
-    if not original then return false, "aucun état d'origine mémorisé" end
+    if not original then return false, "no original state saved" end
     local mesh, err = GetMesh()
     if not mesh then return false, err end
     local n = 0
@@ -261,7 +261,7 @@ local function ResetSkin()
         if mat and pcall(function() mesh:SetMaterial(i, mat) end) then n = n + 1 end
     end
     current = nil
-    return true, n .. " slot(s) restauré(s)"
+    return true, n .. " slot(s) restored"
 end
 
 -- ============================================================================
@@ -335,12 +335,12 @@ end
 -- The skeleton is shared (SKEL_Bob_Skeleton), so the swap is legitimate.
 local function ApplyBobSkin(mode, alsoMesh, keepMats)
     local actors = GetBobActors()
-    if #actors == 0 then return false, "aucun Bob trouvé (il n'est pas chargé dans cette zone ?)" end
+    if #actors == 0 then return false, "no Bob found (not loaded in this area?)" end
 
     local mat = (mode == "standard") and Resolve(BOB_BASE .. "MI_BobSkin_body") or nil
     local mesh = alsoMesh and Resolve(BOB_BASE .. "SKEL_Bob_Mime") or nil
-    if alsoMesh and not mesh then log("  SKEL_Bob_Mime introuvable") end
-    if not mat and not mesh then return false, "rien à appliquer (ni matériau ni mesh résolu)" end
+    if alsoMesh and not mesh then log("  SKEL_Bob_Mime not found") end
+    if not mat and not mesh then return false, "nothing to apply (neither material nor mesh resolved)" end
 
     bobOriginalMats = bobOriginalMats or {}
     bobOriginalMesh = bobOriginalMesh or {}
@@ -397,10 +397,10 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
                 local after = "?"
                 pcall(function() after = ShortName(comp:GetSkinnedAsset()) end)
                 log("    mesh : " .. before .. " -> " .. after
-                    .. (called and "" or "  (appel refusé)"))
+                    .. (called and "" or "  (call refused)"))
                 if after == before then
-                    log("    !! le mesh N'A PAS CHANGÉ côté données : squelette incompatible,")
-                    log("       ou le jeu le réimpose. Essaie 'skin lock'.")
+                    log("    !! the mesh DID NOT CHANGE in the data: incompatible skeleton,")
+                    log("       or the game reimposes it. Try 'skin lock'.")
                 else
                     -- ⚠️ After a mesh swap, the material OVERRIDES set on the
                     -- old indices STAY in place. Since the new geometry does not
@@ -423,12 +423,12 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
                                 cleared = cleared + 1
                             end
                         end
-                        log("    matériaux d'origine reposés : " .. cleared .. "/" .. nn)
+                        log("    original materials restored: " .. cleared .. "/" .. nn)
                     else
                         for i = 0, nn - 1 do
                             if pcall(function() comp:SetMaterial(i, nil) end) then cleared = cleared + 1 end
                         end
-                        log("    overrides purgés : " .. cleared .. "/" .. nn)
+                        log("    overrides purged: " .. cleared .. "/" .. nn)
                     end
                     for i = 0, nn - 1 do
                         local cur
@@ -441,7 +441,7 @@ local function ApplyBobSkin(mode, alsoMesh, keepMats)
         end
     end
     if slots == 0 and not mesh then
-        return false, touched .. " Bob trouvé(s) mais rien n'a été appliqué"
+        return false, touched .. " Bob found but nothing was applied"
     end
     bobMode = mode
     return true, touched .. " Bob" .. (slots > 0 and (", " .. slots .. " slot(s)") or "") .. (mesh and " + mesh mime" or "")
@@ -453,7 +453,7 @@ end
 local function ResetBob()
     local fallbackMesh = Resolve(BOB_BASE .. "SKEL_Bob")
     if not bobOriginalMats then
-        if not fallbackMesh then return false, "ni mémoire d'origine ni SKEL_Bob résolu" end
+        if not fallbackMesh then return false, "no original memory and SKEL_Bob not resolved" end
         local k = 0
         for _, a in ipairs(GetBobActors()) do
             local comp = GetBobMesh(a)
@@ -466,7 +466,7 @@ local function ResetBob()
             end
         end
         bobMode = nil
-        return true, k .. " Bob remis sur SKEL_Bob (repli, sans mémoire d'origine)"
+        return true, k .. " Bob restored to SKEL_Bob (fallback, no original memory)"
     end
     local n = 0
     for _, a in ipairs(GetBobActors()) do
@@ -481,7 +481,7 @@ local function ResetBob()
         end
     end
     bobMode = nil
-    return true, n .. " slot(s) restauré(s) sur Bob"
+    return true, n .. " slot(s) restored on Bob"
 end
 
 -- ============================================================================
@@ -515,16 +515,16 @@ local MESHES = {
     { "wonder4",   "/Game/Art/Character/LastWonder/SKEL_LastWonder_Step04",     "Last Wonder (4)" },
     { "wonder5",   "/Game/Art/Character/LastWonder/SKEL_LastWonder_Step05",     "Last Wonder (5)" },
     { "disappear", "/Game/Art/Character/Disappear/SKEL_Disappear",              "Disappear" },
-    { "cine",      "/Game/Art/Character/Builder/SK_BuilderCINEMATIC",           "Builder (cinématique)" },
+    { "cine",      "/Game/Art/Character/Builder/SK_BuilderCINEMATIC",           "Builder (cinematic)" },
     { "mannequin", "/Game/SoStylized/Demo/Pawn/Mannequin/Character/Mesh/SK_Mannequin", "Mannequin Unreal" },
-    { "hat",       "/Game/Art/Character/Rahne/SK_Rahne_hat",                    "Chapeau de Rahne (gag)" },
+    { "hat",       "/Game/Art/Character/Rahne/SK_Rahne_hat",                    "Rahne's hat (gag)" },
     -- ⚠️ EXTERNAL ASSET: exists ONLY if the custom pak is mounted in Content/Paks/.
     -- Resolve() will fail cleanly as long as that is not the case.
     -- Path captured via "Copy reference" in the UE 5.6 editor:
     --   /Script/Engine.SkeletalMesh'/Game/Test_Alien-Animal-Blender_2_81.Test_Alien-Animal-Blender_2_81'
     -- Mind the mix of dashes/underscores: Test_Alien-Animal-Blender_2_81
-    { "alien",     "/Game/Test_Alien-Animal-Blender_2_81",                      "Alien Animal (pak custom)" },
-    { "one",       "/Game/Art/Character/Hero/Hero_Facial_Final/SK_Hero_facial", "One (d'origine)" },
+    { "alien",     "/Game/Test_Alien-Animal-Blender_2_81",                      "Alien Animal (custom pak)" },
+    { "one",       "/Game/Art/Character/Hero/Hero_Facial_Final/SK_Hero_facial", "One (original)" },
     { "hero",      "/Game/Art/Character/Hero/Hero_Facial_Final/SK_Hero_facial", "One (alias)" },
 }
 
@@ -565,11 +565,11 @@ local function SwapOneMesh(entry)
     local mesh, err = GetMesh()
     if not mesh then return false, err end
     local target = Resolve(entry[2])
-    if not target then return false, "mesh introuvable : " .. entry[2] end
+    if not target then return false, "mesh not found: " .. entry[2] end
 
     if not oneOriginalMesh then
         pcall(function() oneOriginalMesh = mesh:GetSkinnedAsset() end)
-        log("mesh d'origine de One mémorisé : " .. ShortName(oneOriginalMesh))
+        log("One's original mesh saved: " .. ShortName(oneOriginalMesh))
     end
 
     local before = "?"
@@ -579,7 +579,7 @@ local function SwapOneMesh(entry)
     pcall(function() after = ShortName(mesh:GetSkinnedAsset()) end)
     log("  mesh : " .. before .. " -> " .. after)
     if after == before then
-        return false, "le mesh n'a PAS changé (refusé par le moteur)"
+        return false, "the mesh did NOT change (refused by the engine)"
     end
 
     -- Purge the overrides, otherwise One's materials stay stuck on the
@@ -587,7 +587,7 @@ local function SwapOneMesh(entry)
     local nn = 0
     pcall(function() nn = mesh:GetNumMaterials() end)
     for i = 0, nn - 1 do pcall(function() mesh:SetMaterial(i, nil) end) end
-    log("  overrides purgés : " .. nn)
+    log("  overrides purged: " .. nn)
     for i = 0, nn - 1 do
         local cur
         pcall(function() cur = mesh:GetMaterial(i) end)
@@ -606,8 +606,8 @@ local function SwapOneMesh(entry)
     local h = HideStrayComponents(mesh)
     local a = HideAttachedActors() + HideActorsByClass(KNOWN_ATTACHMENTS, true)
     meshSwapTarget = target        -- enables permanent maintenance (see the loop)
-    return true, entry[3] .. " appliqué (" .. nn .. " slots, "
-                 .. h .. " composant(s) + " .. a .. " acteur(s) masqué(s))"
+    return true, entry[3] .. " applied (" .. nn .. " slots, "
+                 .. h .. " component(s) + " .. a .. " actor(s) hidden)"
 end
 
 -- ---------------------------------------------------------------------------
@@ -703,7 +703,7 @@ HideActorsByClass = function(classes, hide)
                     if pcall(function() a:SetActorHiddenInGame(hide) end) then
                         n = n + 1
                         if hide then hiddenActors[#hiddenActors + 1] = a end
-                        log("    " .. (hide and "masqué" or "réaffiché") .. " : " .. ShortName(a))
+                        log("    " .. (hide and "hidden" or "shown") .. " : " .. ShortName(a))
                     end
                 end
             end
@@ -834,7 +834,7 @@ CollectOverlaySMC = function(ov)
             pcall(function() arr = om.SkeletalMeshComponents end)
             eatArray(arr, slot .. ".SkeletalMeshComponents")
         else
-            log("      (" .. slot .. " : nil/invalide)")
+            log("      (" .. slot .. " : nil/invalid)")
         end
     end
     return out
@@ -865,10 +865,10 @@ DumpState = function(list, tag)
             log("      [" .. tag .. "] " .. ShortName(smc)
                 .. "  bVisible=" .. v .. "  bHiddenInGame=" .. h
                 .. "  customDepth=" .. cd .. "  asset=" .. a
-                .. (ko and "   << TOUJOURS VISIBLE" or ""))
+                .. (ko and "   << STILL VISIBLE" or ""))
         end
     end
-    log("      [" .. tag .. "] encore visibles : " .. alive .. " / " .. #list)
+    log("      [" .. tag .. "] still visible: " .. alive .. " / " .. #list)
     return alive
 end
 
@@ -886,7 +886,7 @@ local function SaveOutlineState(ov, smcs)
     pcall(function() outlineSaved.ov.one = ov.OwnerIsOne end)
     pcall(function() outlineSaved.ov.outMat = ov.OutlineMaterial end)
     pcall(function() outlineSaved.ov.staMat = ov.StatusMaterial end)
-    log("  [outline] état d'origine mémorisé (" .. #outlineSaved.comps .. " composant(s))")
+    log("  [outline] original state saved (" .. #outlineSaved.comps .. " component(s))")
 end
 
 -- ---------------------------------------------------------------------------
@@ -895,12 +895,12 @@ end
 DiagOutline = function()
     log("  [outline/diag] ---------------------------------------------")
     local pawn = GetPawn()
-    if not pawn then log("  [outline/diag] joueur introuvable") return 0 end
+    if not pawn then log("  [outline/diag] player not found") return 0 end
     local ov = GetOverlayComp()
     if not okObj(ov) then
-        log("  [outline/diag] BP_OverlayMeshComponent INTROUVABLE sur le pawn")
+        log("  [outline/diag] BP_OverlayMeshComponent NOT FOUND on the pawn")
     else
-        log("  [outline/diag] composant = " .. ShortName(ov) .. " [" .. (ClassOf(ov) or "?") .. "]")
+        log("  [outline/diag] component = " .. ShortName(ov) .. " [" .. (ClassOf(ov) or "?") .. "]")
         for _, k in ipairs({ "OwnerIsOne", "bTickEnabled" }) do
             local v = "?"
             pcall(function() v = tostring(ov[k]) end)
@@ -918,7 +918,7 @@ DiagOutline = function()
 
     local smcs = {}
     if okObj(ov) then smcs = CollectOverlaySMC(ov) end
-    log("  [outline/diag] " .. #smcs .. " SkeletalMeshComponent d'overlay")
+    log("  [outline/diag] " .. #smcs .. " overlay SkeletalMeshComponent")
     DumpState(smcs, "diag")
 
     -- Materials carried by the doubles: these are MID_ created at runtime,
@@ -937,11 +937,11 @@ DiagOutline = function()
     local mesh = GetMesh()
     if okObj(mesh) then
         local v, h, cd, a = ReadState(mesh)
-        log("  [outline/diag] Mesh principal " .. ShortName(mesh)
-            .. " asset=" .. a .. " bVisible=" .. v .. " caché=" .. h .. " customDepth=" .. cd)
+        log("  [outline/diag] main Mesh " .. ShortName(mesh)
+            .. " asset=" .. a .. " bVisible=" .. v .. " hidden=" .. h .. " customDepth=" .. cd)
         local ovm
         pcall(function() ovm = mesh:GetOverlayMaterial() end)
-        log("      GetOverlayMaterial() = " .. ShortName(ovm) .. "  (écarté : ce n'est pas le mécanisme)")
+        log("      GetOverlayMaterial() = " .. ShortName(ovm) .. "  (ruled out: not the mechanism)")
     end
 
     -- Any other SkeletalMeshComponent of the pawn: "double" candidates.
@@ -954,8 +954,8 @@ DiagOutline = function()
                and string.find(ClassOf(c) or "", "SkeletalMeshComponent", 1, true) then
                 seen[fn] = true
                 local v, h, cd, a = ReadState(c)
-                log("      autre SMC : " .. ShortName(c) .. " asset=" .. a
-                    .. " bVisible=" .. v .. " caché=" .. h .. " customDepth=" .. cd)
+                log("      other SMC: " .. ShortName(c) .. " asset=" .. a
+                    .. " bVisible=" .. v .. " hidden=" .. h .. " customDepth=" .. cd)
             end
         end
     end
@@ -970,20 +970,20 @@ end
 -- ---------------------------------------------------------------------------
 KillOutline = function(hard)
     local ov = GetOverlayComp()
-    if not okObj(ov) then log("  [outline] BP_OverlayMeshComponent INTROUVABLE") return 0 end
-    log("  [outline] composant = " .. ShortName(ov) .. " [" .. (ClassOf(ov) or "?") .. "]")
+    if not okObj(ov) then log("  [outline] BP_OverlayMeshComponent NOT FOUND") return 0 end
+    log("  [outline] component = " .. ShortName(ov) .. " [" .. (ClassOf(ov) or "?") .. "]")
 
     local smcs = CollectOverlaySMC(ov)
-    log("  [outline] " .. #smcs .. " SkeletalMeshComponent d'overlay collecté(s)")
+    log("  [outline] " .. #smcs .. " overlay SkeletalMeshComponent collected")
     SaveOutlineState(ov, smcs)
-    DumpState(smcs, "AVANT")
+    DumpState(smcs, "BEFORE")
 
     -- STEP 1 — the game's official path. UFUNCTION BlueprintCallable, a single
     -- BoolProperty parameter: no FName/FText risk (pitfall c).
     local ok1 = pcall(function() ov:SetOverlayHidden(true) end)
-    log("  [outline] E1 SetOverlayHidden(true) appel=" .. tostring(ok1))
+    log("  [outline] E1 SetOverlayHidden(true) call=" .. tostring(ok1))
     if #smcs > 0 and DumpState(smcs, "E1") == 0 then
-        log("  [outline] réglé dès l'étape 1")
+        log("  [outline] fixed at step 1")
         return #smcs
     end
 
@@ -996,7 +996,7 @@ KillOutline = function(hard)
         pcall(function() smc:SetHiddenInGame(true, true) end)
         pcall(function() smc:SetRenderCustomDepth(false) end)
     end
-    log("  [outline] E2 SetVisibility/SetHiddenInGame sur " .. #smcs .. " composant(s)")
+    log("  [outline] E2 SetVisibility/SetHiddenInGame on " .. #smcs .. " component(s)")
     if #smcs > 0 then DumpState(smcs, "E2") end
 
     -- STEP 3 — distance cull. ⚠️ the Blueprint variable's name CONTAINS
@@ -1005,7 +1005,7 @@ KillOutline = function(hard)
     pcall(function() ov["Max Draw Distance"] = 1.0 end)
     local mdd = "?"
     pcall(function() mdd = tostring(ov["Max Draw Distance"]) end)
-    log("  [outline] E3 'Max Draw Distance' relu = " .. mdd)
+    log("  [outline] E3 'Max Draw Distance' read back = " .. mdd)
 
     -- STEP 4 — block the REGENERATION (tick -> UpdateOverlayByDistance).
     -- ⚠️ We NEVER call GenerateSkeletalMeshes (FName parameter, and it
@@ -1032,7 +1032,7 @@ KillOutline = function(hard)
                 seen[fn] = true
                 local v, h, cd, a = ReadState(c)
                 if v ~= "false" and h ~= "true" then
-                    log("      [E5] rescapé " .. ShortName(c) .. " asset=" .. a)
+                    log("      [E5] survivor " .. ShortName(c) .. " asset=" .. a)
                     if not outlineSaved.extra then outlineSaved.extra = {} end
                     outlineSaved.extra[#outlineSaved.extra + 1] =
                         { smc = c, vis = v, hid = h, cd = cd }
@@ -1045,7 +1045,7 @@ KillOutline = function(hard)
             end
         end
     end
-    log("  [outline] E5 " .. extra .. " composant(s) supplémentaire(s) traité(s)")
+    log("  [outline] E5 " .. extra .. " extra component(s) processed")
 
     -- STEP 6 — NUCLEAR, only on 'skin outline hard'. Empties the geometry
     -- of the doubles, destroys the components, then neutralizes the material seed
@@ -1054,21 +1054,21 @@ KillOutline = function(hard)
         for _, smc in ipairs(smcs) do
             pcall(function() smc:SetSkinnedAssetAndUpdate(nil, true) end)
             local _, _, _, a = ReadState(smc)
-            log("      [E6] " .. ShortName(smc) .. " asset après vidage = " .. a)
+            log("      [E6] " .. ShortName(smc) .. " asset after clearing = " .. a)
         end
         for _, smc in ipairs(smcs) do
             local nm = ShortName(smc)
             pcall(function() smc:DestroyComponent(nil) end)
             local still = "?"
             pcall(function() still = tostring(okObj(smc)) end)
-            log("      [E6] DestroyComponent " .. nm .. " -> encore valide=" .. still)
+            log("      [E6] DestroyComponent " .. nm .. " -> still valid=" .. still)
         end
         pcall(function() ov.OutlineMaterial = nil end)
         pcall(function() ov.StatusMaterial = nil end)
         local om, sm = "?", "?"
         pcall(function() om = ShortName(ov.OutlineMaterial) end)
         pcall(function() sm = ShortName(ov.StatusMaterial) end)
-        log("      [E6] OutlineMaterial relu = " .. om .. "  StatusMaterial relu = " .. sm)
+        log("      [E6] OutlineMaterial read back = " .. om .. "  StatusMaterial read back = " .. sm)
     end
 
     return #smcs
@@ -1079,21 +1079,21 @@ end
 --  No effect on what step 6 destroyed (warn the user).
 -- ---------------------------------------------------------------------------
 RestoreOutline = function()
-    if not outlineSaved then return false, "rien à restaurer (outline jamais supprimé)" end
+    if not outlineSaved then return false, "nothing to restore (outline never removed)" end
     local ov = GetOverlayComp()
     local n = 0
 
     local function put(rec)
         local smc = rec.smc
         if not okObj(smc) then
-            log("      [restore] composant détruit, non restaurable : " .. tostring(rec.hid))
+            log("      [restore] component destroyed, not restorable: " .. tostring(rec.hid))
             return
         end
         pcall(function() smc:SetVisibility(rec.vis ~= "false", true) end)
         pcall(function() smc:SetHiddenInGame(rec.hid == "true", true) end)
         pcall(function() smc:SetRenderCustomDepth(rec.cd == "true") end)
         local v, h = ReadState(smc)
-        log("      [restore] " .. ShortName(smc) .. " -> bVisible=" .. v .. " caché=" .. h)
+        log("      [restore] " .. ShortName(smc) .. " -> bVisible=" .. v .. " hidden=" .. h)
         n = n + 1
     end
 
@@ -1116,7 +1116,7 @@ RestoreOutline = function()
         pcall(function() one = tostring(ov.OwnerIsOne) end)
         log("      [restore] ov : MaxDrawDistance=" .. mdd .. " tick=" .. tick .. " OwnerIsOne=" .. one)
     end
-    return true, n .. " composant(s) restauré(s)"
+    return true, n .. " component(s) restored"
 end
 
 -- Compatibility: the mesh swap and the maintenance loop still call
@@ -1143,7 +1143,7 @@ HideAttachedActors = function()
         if pcall(function() a:SetActorHiddenInGame(true) end) then
             hiddenActors[#hiddenActors + 1] = a
             n = n + 1
-            log("    acteur masqué : " .. ShortName(a))
+            log("    actor hidden: " .. ShortName(a))
         end
     end
     if cnt and cnt > 0 then
@@ -1178,9 +1178,9 @@ HideStrayComponents = function(mainMesh)
                 if pcall(function() c:SetHiddenInGame(true, true) end) then
                     hidden[#hidden + 1] = c
                     n = n + 1
-                    log("    masqué : " .. ShortName(c) .. "  [" .. ClassOf(c) .. "]")
+                    log("    hidden: " .. ShortName(c) .. "  [" .. ClassOf(c) .. "]")
                 else
-                    log("    ÉCHEC masquage : " .. ShortName(c) .. "  [" .. ClassOf(c) .. "]")
+                    log("    FAILED to hide: " .. ShortName(c) .. "  [" .. ClassOf(c) .. "]")
                 end
             end
         end
@@ -1204,7 +1204,7 @@ local function ResetOneMesh()
     if not mesh then return false, err end
     local target = oneOriginalMesh
                 or Resolve("/Game/Art/Character/Hero/Hero_Facial_Final/SK_Hero_facial")
-    if not target then return false, "mesh d'origine introuvable" end
+    if not target then return false, "original mesh not found" end
     pcall(function() mesh:SetSkinnedAssetAndUpdate(target, true) end)
     local nn = 0
     pcall(function() nn = mesh:GetNumMaterials() end)
@@ -1213,8 +1213,8 @@ local function ResetOneMesh()
     HideActorsByClass(KNOWN_ATTACHMENTS, false)
     local u = UnhideStrayComponents()
     local ua = UnhideAttachedActors()
-    return true, "One remis sur " .. ShortName(target)
-                 .. " (" .. u .. " composant(s) + " .. ua .. " acteur(s) réaffiché(s))"
+    return true, "One restored to " .. ShortName(target)
+                 .. " (" .. u .. " component(s) + " .. ua .. " actor(s) shown again)"
 end
 
 -- ---------------------------------------------------------------------------
@@ -1240,7 +1240,7 @@ LoopAsync(1500, function()
                 end)
                 if n and n ~= lastAttachSig then
                     lastAttachSig = n
-                    loud("entretien du swap : " .. n .. " (acteurs/overlay)")
+                    loud("swap maintenance: " .. n .. " (actors/overlay)")
                 end
             end)
         end)
@@ -1259,7 +1259,7 @@ LoopAsync(1500, function()
                 local sig = tostring(r)
                 if sig ~= lastOutlineSig then
                     lastOutlineSig = sig
-                    loud("verrou outline : etat -> " .. sig)
+                    loud("outline lock: state -> " .. sig)
                 end
             end)
         end)
@@ -1290,21 +1290,21 @@ local BASE_OPT = "/Game/Game/Option/DataAssets/Gameplay/Skin/"
 local function AttachBobSpinner()
     local sub = Resolve(BASE_OPT .. "DA_Skin_SubSection")
     local bob = Resolve(BASE_OPT .. "DA_Skin_Bob_Spinner")
-    if not (sub and bob) then return false, "DataAssets introuvables" end
+    if not (sub and bob) then return false, "DataAssets not found" end
     local arr
     pcall(function() arr = sub.OptionDescriptors end)
-    if not arr then return false, "OptionDescriptors illisible" end
+    if not arr then return false, "OptionDescriptors unreadable" end
     local n = 0
     pcall(function() n = arr:GetArrayNum() end)
     for i = 1, n do
         local v
         pcall(function() v = arr[i] end)
-        if v and Name(v) == Name(bob) then return true, "déjà branché (" .. n .. " entrées)" end
+        if v and Name(v) == Name(bob) then return true, "already wired in (" .. n .. " entries)" end
     end
-    if not pcall(function() arr[n + 1] = bob end) then return false, "écriture refusée" end
+    if not pcall(function() arr[n + 1] = bob end) then return false, "write refused" end
     local after = 0
     pcall(function() after = arr:GetArrayNum() end)
-    return after > n, "tableau " .. n .. " -> " .. after .. " (sans effet sur l'UI, voir en-tête)"
+    return after > n, "array " .. n .. " -> " .. after .. " (no effect on the UI, see header)"
 end
 
 -- ---------------------------------------------------------------------------
@@ -1316,17 +1316,17 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
 
     if key == "slots" then
         local slots, err = ReadSlots()
-        if not slots then say(Ar, "ERREUR : " .. tostring(err)); return true end
-        say(Ar, #slots .. " slot(s) matériau sur le joueur :")
+        if not slots then say(Ar, "error: " .. tostring(err)); return true end
+        say(Ar, #slots .. " material slot(s) on the player:")
         for _, s in ipairs(slots) do
-            say(Ar, string.format("   [%d] %-40s -> %s", s.index, s.name, s.part or "(non associé)"))
+            say(Ar, string.format("   [%d] %-40s -> %s", s.index, s.name, s.part or "(unmatched)"))
         end
-        say(Ar, "skin courant : " .. (current and ("Skin" .. current) or "origine"))
+        say(Ar, "current skin: " .. (current and ("Skin" .. current) or "original"))
         return true
     end
 
     if key == "reset" then
-        say(Ar, "restauration des matériaux d'origine…")
+        say(Ar, "restoring original materials…")
         locked = false
         ExecuteInGameThread(function()          -- no Ar here
             local ok, msg = ResetSkin()
@@ -1337,14 +1337,14 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
 
     if key == "lock" then
         locked = not locked
-        say(Ar, locked and "verrou ACTIF : le skin sera réappliqué toutes les 2 s."
-                       or  "verrou levé.")
+        say(Ar, locked and "lock ON: the skin will be reapplied every 2 s."
+                       or  "lock released.")
         return true
     end
 
     if key == "menu" then
-        say(Ar, "tentative de branchement du spinner de Bob…")
-        say(Ar, "(rappel : la liste du menu est figée à sa création, l'UI ne bougera pas)")
+        say(Ar, "attempting to wire in Bob's spinner…")
+        say(Ar, "(reminder: the menu list is frozen at creation, the UI will not change)")
         ExecuteInGameThread(function()          -- no Ar here
             local ok, msg = AttachBobSpinner()
             log("menu -> " .. tostring(msg))
@@ -1355,18 +1355,18 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
     if key == "mesh" then
         local sub = (p[2] and string.lower(p[2])) or ""
         if sub == "" or sub == "list" then
-            say(Ar, "modèles disponibles (déjà dans le jeu) — usage : skin mesh <alias>")
+            say(Ar, "available models (already in the game) — usage: skin mesh <alias>")
             for _, m in ipairs(MESHES) do
                 say(Ar, string.format("   %-9s %s", m[1], m[3]))
             end
-            say(Ar, "skin mesh reset  -> remet One")
-            say(Ar, "⚠️ squelette différent = modèle figé ou déformé. C'est attendu.")
+            say(Ar, "skin mesh reset  -> restores One")
+            say(Ar, "⚠️ different skeleton = frozen or deformed model. That's expected.")
             return true
         end
         if sub == "near" then
             local r = tonumber(p[3]) or 300
             local near = ListNearbyActors(r)
-            say(Ar, #near .. " acteur(s) à moins de " .. r .. " unités :")
+            say(Ar, #near .. " actor(s) within " .. r .. " units:")
             for i = 1, math.min(#near, 25) do
                 say(Ar, string.format("   %6.0f  %s", near[i].dist, ShortName(near[i].actor)))
             end
@@ -1374,32 +1374,32 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         end
         if sub == "hide" then
             local cls = p[3]
-            if not cls then say(Ar, "usage : skin mesh hide <NomDeClasse_C>"); return true end
-            say(Ar, "masquage de tous les " .. cls .. "…")
+            if not cls then say(Ar, "usage: skin mesh hide <ClassName_C>"); return true end
+            say(Ar, "hiding all " .. cls .. "…")
             ExecuteInGameThread(function()          -- no Ar here
-                log("masqués : " .. HideActorsByClass({ cls }, true))
+                log("hidden: " .. HideActorsByClass({ cls }, true))
             end)
             return true
         end
         if sub == "comps" then
             local comps = ListPawnMeshComponents()
-            say(Ar, #comps .. " composant(s) mesh sur le joueur :")
+            say(Ar, #comps .. " mesh component(s) on the player:")
             for _, c in ipairs(comps) do
                 local hid = "?"
                 pcall(function() hid = tostring(c.bHiddenInGame) end)
-                say(Ar, string.format("   %-34s [%s] caché=%s", ShortName(c), ClassOf(c), hid))
+                say(Ar, string.format("   %-34s [%s] hidden=%s", ShortName(c), ClassOf(c), hid))
             end
             return true
         end
         if sub == "show" then
-            say(Ar, "réaffichage des composants masqués…")
+            say(Ar, "showing hidden components again…")
             ExecuteInGameThread(function()          -- no Ar here
-                log("réaffichés : " .. UnhideStrayComponents())
+                log("shown again: " .. UnhideStrayComponents())
             end)
             return true
         end
         if sub == "reset" or sub == "off" then
-            say(Ar, "restauration du modèle de One…")
+            say(Ar, "restoring One's model…")
             ExecuteInGameThread(function()          -- no Ar here
                 local ok, msg = ResetOneMesh()
                 log("mesh reset -> " .. tostring(msg))
@@ -1407,11 +1407,11 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
             return true
         end
         local entry = FindEntry(MESHES, sub)
-        if not entry then say(Ar, "inconnu : '" .. sub .. "' — tape 'skin mesh list'"); return true end
-        say(Ar, "remplacement du modèle de One par " .. entry[3] .. "…")
+        if not entry then say(Ar, "unknown: '" .. sub .. "' — type 'skin mesh list'"); return true end
+        say(Ar, "replacing One's model with " .. entry[3] .. "…")
         ExecuteInGameThread(function()              -- no Ar here
             local ok, msg = SwapOneMesh(entry)
-            log("skin mesh " .. sub .. " -> " .. (ok and msg or ("ÉCHEC : " .. tostring(msg))))
+            log("skin mesh " .. sub .. " -> " .. (ok and msg or ("failed: " .. tostring(msg))))
         end)
         return true
     end
@@ -1419,7 +1419,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
     if key == "bob" then
         local sub = (p[2] and string.lower(p[2])) or ""
         if sub == "off" or sub == "reset" then
-            say(Ar, "restauration de Bob…")
+            say(Ar, "restoring Bob…")
             ExecuteInGameThread(function()          -- no Ar here
                 local ok, msg = ResetBob()
                 log("bob off -> " .. tostring(msg))
@@ -1428,7 +1428,7 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         end
         if sub == "slots" then
             local actors = GetBobActors()
-            say(Ar, #actors .. " Bob trouvé(s)")
+            say(Ar, #actors .. " Bob found")
             for _, a in ipairs(actors) do
                 local comp = GetBobMesh(a)
                 if comp then
@@ -1447,21 +1447,21 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         -- 'skin bob'          -> mime (THIS is it, Marcel Bob: the mesh)
         -- 'skin bob standard' -> puts the body back on MI_BobSkin_body
         if sub == "standard" or sub == "body" then
-            say(Ar, "corps de Bob -> MI_BobSkin_body…")
+            say(Ar, "Bob's body -> MI_BobSkin_body…")
             ExecuteInGameThread(function()          -- no Ar here
                 local ok, msg = ApplyBobSkin("standard", false)
-                log("skin bob standard -> " .. (ok and msg or ("ÉCHEC : " .. tostring(msg))))
+                log("skin bob standard -> " .. (ok and msg or ("failed: " .. tostring(msg))))
             end)
             return true
         end
         -- 'skin bob keep': mime mesh + original materials (MIDs parameterized by
         -- the game) instead of the mesh's raw materials, which render black.
         local keep = (sub == "keep" or sub == "mid")
-        say(Ar, "Marcel Bob : échange du mesh vers SKEL_Bob_Mime"
-                .. (keep and " (+ matériaux d'origine conservés)" or "") .. "…")
+        say(Ar, "Marcel Bob: swapping the mesh to SKEL_Bob_Mime"
+                .. (keep and " (+ original materials kept)" or "") .. "…")
         ExecuteInGameThread(function()              -- no Ar here
             local ok, msg = ApplyBobSkin("mime", true, keep)
-            log("skin bob -> " .. (ok and msg or ("ÉCHEC : " .. tostring(msg))))
+            log("skin bob -> " .. (ok and msg or ("failed: " .. tostring(msg))))
         end)
         return true
     end
@@ -1470,17 +1470,17 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
         local sub = (p[2] and string.lower(p[2])) or ""
 
         if sub == "diag" then
-            say(Ar, "diagnostic de l'outline — rien ne sera modifié.")
-            say(Ar, "détail complet dans la FENÊTRE DE CONSOLE UE4SS.")
+            say(Ar, "outline diagnostic — nothing will be changed.")
+            say(Ar, "full detail in the UE4SS CONSOLE WINDOW.")
             ExecuteInGameThread(function()          -- no Ar here
                 local n = DiagOutline()
-                log("outline diag -> " .. tostring(n) .. " composant(s) d'overlay")
+                log("outline diag -> " .. tostring(n) .. " overlay component(s)")
             end)
             return true
         end
 
         if sub == "on" then
-            say(Ar, "restauration de l'outline…")
+            say(Ar, "restoring the outline…")
             outlineLocked = false
             ExecuteInGameThread(function()          -- no Ar here
                 local ok, msg = RestoreOutline()
@@ -1491,11 +1491,11 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
 
         if sub == "lock" then
             outlineLocked = not outlineLocked
-            say(Ar, outlineLocked and "verrou outline ACTIF : suppression relancée toutes les 1,5 s."
-                                  or  "verrou outline levé.")
+            say(Ar, outlineLocked and "outline lock ON: removal rerun every 1.5 s."
+                                  or  "outline lock released.")
             if outlineLocked then
                 ExecuteInGameThread(function()      -- no Ar here
-                    log("outline lock -> " .. tostring(KillOutline(false)) .. " composant(s)")
+                    log("outline lock -> " .. tostring(KillOutline(false)) .. " component(s)")
                 end)
             end
             return true
@@ -1503,50 +1503,50 @@ RegisterConsoleCommandGlobalHandler("skin", function(FullCommand, Parameters, Ar
 
         if sub == "" or sub == "off" or sub == "hard" then
             local hard = (sub == "hard")
-            say(Ar, hard and "suppression NUCLÉAIRE de l'outline (irréversible jusqu'au rechargement du niveau)…"
-                          or  "suppression de l'outline (cascade E1→E5)…")
-            say(Ar, "détail complet dans la FENÊTRE DE CONSOLE UE4SS.")
+            say(Ar, hard and "NUCLEAR outline removal (irreversible until the level reloads)…"
+                          or  "outline removal (cascade E1→E5)…")
+            say(Ar, "full detail in the UE4SS CONSOLE WINDOW.")
             ExecuteInGameThread(function()          -- no Ar here
                 local n = KillOutline(hard)
                 log("outline " .. (hard and "hard" or "off") .. " -> "
-                    .. tostring(n) .. " composant(s) d'overlay traité(s)")
+                    .. tostring(n) .. " overlay component(s) processed")
             end)
             return true
         end
 
-        say(Ar, "usage : skin outline off | on | diag | lock | hard")
+        say(Ar, "usage: skin outline off | on | diag | lock | hard")
         return true
     end
 
     if key == "one" then
         local n = tonumber(p[2])
         if not n or n < 0 or n > 4 then
-            say(Ar, "usage : skin one <0-4>   (0 = défaut, 1 = Hellgur, 2-4 = cachés)")
+            say(Ar, "usage: skin one <0-4>   (0 = default, 1 = Hellgur, 2-4 = hidden)")
             return true
         end
         n = math.floor(n)
-        say(Ar, "application du Skin" .. n .. "…")
+        say(Ar, "applying Skin" .. n .. "…")
         ExecuteInGameThread(function()          -- no Ar here
             local ok, msg = ApplySkin(n)
-            log("skin one " .. n .. " -> " .. (ok and msg or ("ÉCHEC : " .. tostring(msg))))
+            log("skin one " .. n .. " -> " .. (ok and msg or ("failed: " .. tostring(msg))))
         end)
         return true
     end
 
-    say(Ar, "ONE : skin one <0-4> | skin slots")
-    say(Ar, "BOB : skin bob (mesh mime) | skin bob keep (mime + matériaux d'origine)")
-    say(Ar, "      skin bob standard | skin bob off | skin bob slots")
-    say(Ar, "OUTLINE : skin outline off (supprime la silhouette noire) | skin outline on")
-    say(Ar, "          skin outline diag (n'écrit rien) | skin outline lock | skin outline hard")
-    say(Ar, "AUTRES : skin reset | skin lock | skin menu")
-    say(Ar, "Skin0 = défaut, Skin1 = Hellgur One, Skin2/3/4 = jamais exposés dans le menu")
-    say(Ar, "Bob : 'Marcel Bob' = MI_BobSkin_Mustache (+ mesh SKEL_Bob_Mime avec 'mime')")
-    say(Ar, "skin courant : " .. (current and ("Skin" .. current) or "origine")
-            .. " | verrou : " .. tostring(locked))
+    say(Ar, "ONE: skin one <0-4> | skin slots")
+    say(Ar, "BOB: skin bob (mime mesh) | skin bob keep (mime + original materials)")
+    say(Ar, "     skin bob standard | skin bob off | skin bob slots")
+    say(Ar, "OUTLINE: skin outline off (removes the black silhouette) | skin outline on")
+    say(Ar, "         skin outline diag (writes nothing) | skin outline lock | skin outline hard")
+    say(Ar, "OTHER: skin reset | skin lock | skin menu")
+    say(Ar, "Skin0 = default, Skin1 = Hellgur One, Skin2/3/4 = never exposed in the menu")
+    say(Ar, "Bob: 'Marcel Bob' = MI_BobSkin_Mustache (+ SKEL_Bob_Mime mesh with 'mime')")
+    say(Ar, "current skin: " .. (current and ("Skin" .. current) or "original")
+            .. " | lock: " .. tostring(locked))
     return true
 end)
 
-log("Chargé (v2). 'skin slots' pour découvrir, 'skin one 2' pour un skin caché.")
+log("loaded (v2). 'skin slots' to explore, 'skin one 2' for a hidden skin.")
 
 -- ============================================================================
 --  Startup application (see the BOOT_* block at the top).
@@ -1575,7 +1575,7 @@ if BOOT_MESH ~= "none" or BOOT_SKIN >= 0 or BOOT_OUTLINE ~= "keep"
                 if BOOT_HIDE_STICK then HideActorsByClass({ "BP_Stick_C" }, true) end
                 if BOOT_HIDE_HAIR  then HideActorsByClass({ "BP_Bigoudi_C" }, true) end
             end)
-            loud("application au démarrage terminée (pilotée par le launcher)")
+            loud("startup application done (driven by the launcher)")
         end)
         return true
     end)

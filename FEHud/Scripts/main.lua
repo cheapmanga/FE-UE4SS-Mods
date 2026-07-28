@@ -43,12 +43,12 @@ local function GetCheatManager()
 end
 
 local function EnsureCheatManager()
-    if GetCheatManager() then return true, "déjà actif" end
+    if GetCheatManager() then return true, "already active" end
     local pc = GetPC()
-    if not pc then return false, "PlayerController introuvable" end
-    if not pcall(function() pc:EnableCheats() end) then return false, "EnableCheats() a échoué" end
-    if not GetCheatManager() then return false, "EnableCheats() appelé mais CheatManager nul" end
-    return true, "activé"
+    if not pc then return false, "PlayerController not found" end
+    if not pcall(function() pc:EnableCheats() end) then return false, "EnableCheats() failed" end
+    if not GetCheatManager() then return false, "EnableCheats() called but CheatManager is null" end
+    return true, "enabled"
 end
 
 -- ============================================================================
@@ -63,18 +63,18 @@ RegisterConsoleCommandGlobalHandler("hud", function(FullCommand, Parameters, Ar)
         if Ar then pcall(function() Ar:Log("[FE-HUD] " .. tostring(m)) end) end
     end
 
-    say("bascule du HUD…")
+    say("toggling the HUD…")
 
     ExecuteInGameThread(function()
         local ok, why = EnsureCheatManager()
         if not ok then
-            log("CheatManager absent — échec : " .. tostring(why))
+            log("CheatManager missing — failed: " .. tostring(why))
             return
         end
 
         local cm = GetCheatManager()
         if not cm then
-            log("CheatManager toujours introuvable après EnsureCheatManager")
+            log("CheatManager still not found after EnsureCheatManager")
             return
         end
 
@@ -95,11 +95,11 @@ RegisterConsoleCommandGlobalHandler("hud", function(FullCommand, Parameters, Ar)
         if callOk then
             log(fname .. " -> OK")
         else
-            log(fname .. " -> échec : " .. tostring(err))
+            log(fname .. " -> failed: " .. tostring(err))
         end
     end)
 
     return true
 end)
 
-log("Chargé (HUD Toggle v1). Commande : hud")
+log("loaded (HUD Toggle v1). command: hud")

@@ -63,9 +63,9 @@ end
 local function withComp(fn)
     ExecuteInGameThread(function()
         local pawn = getPawn()
-        if not pawn then log("Joueur introuvable (" .. PLAYER_CLASS .. ").") return end
+        if not pawn then log("player not found (" .. PLAYER_CLASS .. ").") return end
         local comp = getDeathComp(pawn)
-        if not comp then log("UDeathBehaviorComponent introuvable sur le joueur.") return end
+        if not comp then log("UDeathBehaviorComponent not found on the player.") return end
         fn(comp)
     end)
 end
@@ -75,7 +75,7 @@ local function activate()
         pcall(function() comp:PreventFallDeath() end)   -- inc counter -> no void
         pcall(function() comp:SetPreventRevive(true) end) -- no respawn
         local n = readCounter(comp)
-        log("Void Cancel ACTIVÉ  (no void, no respawn)" .. (n and ("  [compteur=" .. n .. "]") or ""))
+        log("Void Cancel ENABLED  (no void, no respawn)" .. (n and ("  [counter=" .. n .. "]") or ""))
     end)
 end
 
@@ -96,10 +96,10 @@ local function deactivate()
             pcall(function() comp.PreventFallDeathVolumeActivated = 0 end)
         end
         local left = readCounter(comp)
-        log("Void Cancel DÉSACTIVÉ  (void + respawn rétablis)" .. (left and ("  [compteur=" .. left .. "]") or ""))
+        log("Void Cancel DISABLED  (void + respawn restored)" .. (left and ("  [counter=" .. left .. "]") or ""))
     end)
 end
 
 RegisterKeyBind(ACTIVATE_KEY, activate)
 RegisterKeyBind(DEACTIVATE_KEY, deactivate)
-log("Chargé.  F9 = activer Void Cancel  |  F10 = désactiver")
+log("loaded.  F9 = enable Void Cancel  |  F10 = disable")

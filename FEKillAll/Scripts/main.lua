@@ -51,7 +51,7 @@ local function killOne(enemy)
     local dc = nil
     pcall(function() dc = enemy.BP_DeathBehaviour end)
     if not (dc and dc:IsValid()) then
-        return false, "pas de BP_DeathBehaviour"
+        return false, "no BP_DeathBehaviour"
     end
 
     -- 1) Clean path: inherited from UDeathBehaviorComponent, BlueprintCallable.
@@ -66,7 +66,7 @@ local function killOne(enemy)
     ok = pcall(function() dc:TriggerInstantFallDeath() end)
     if ok then return true, "TriggerInstantFallDeath" end
 
-    return false, "les 3 methodes ont echoue"
+    return false, "all 3 methods failed"
 end
 
 RegisterConsoleCommandHandler("killall", function(FullCommand, Parameters, Ar)
@@ -74,12 +74,12 @@ RegisterConsoleCommandHandler("killall", function(FullCommand, Parameters, Ar)
     local enemies = listEnemies()
 
     if #enemies == 0 then
-        say(Ar, "aucun ennemi charge. Es-tu bien dans une zone avec des ennemis vivants ?")
+        say(Ar, "no enemy loaded. Are you in an area with living enemies?")
         return true
     end
 
     if mode == "count" then
-        say(Ar, #enemies .. " ennemi(s) charge(s)")
+        say(Ar, #enemies .. " enemy(ies) loaded")
         return true
     end
 
@@ -91,14 +91,14 @@ RegisterConsoleCommandHandler("killall", function(FullCommand, Parameters, Ar)
             how[method] = (how[method] or 0) + 1
         else
             failed = failed + 1
-            log("  echec : " .. tostring(method))
+            log("  failed: " .. tostring(method))
         end
     end
 
-    say(Ar, killed .. " tue(s), " .. failed .. " echec(s) sur " .. #enemies)
-    for m, n in pairs(how) do say(Ar, "  via " .. m .. " : " .. n) end
-    say(Ar, "Verifie A L'ECRAN : un appel sans erreur ne prouve pas la mort.")
+    say(Ar, killed .. " killed, " .. failed .. " failed out of " .. #enemies)
+    for m, n in pairs(how) do say(Ar, "  via " .. m .. ": " .. n) end
+    say(Ar, "check ON SCREEN: a call without an error does not prove the kill.")
     return true
 end)
 
-log("charge. Commandes : killall | killall count")
+log("loaded. Commands: killall | killall count")

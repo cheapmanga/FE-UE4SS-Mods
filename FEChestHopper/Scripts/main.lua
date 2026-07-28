@@ -134,13 +134,13 @@ local idx = 0     -- index of the last visited chest (0 = not started yet)
 
 local function BuildTour(Ar)
     local pawn = GetPawn()
-    if not pawn then return false, "joueur introuvable" end
+    if not pawn then return false, "player not found" end
     local ppos = ProbeLocation(pawn)
-    if not ppos then return false, "position du joueur illisible" end
+    if not ppos then return false, "player position unreadable" end
 
     local chests = CollectChests()
     if #chests == 0 then
-        return false, "aucun coffre chargé (zone pas encore streamée ?) — essaie 'chest list'"
+        return false, "no chest loaded (zone not streamed yet?) — try 'chest list'"
     end
 
     for _, c in ipairs(chests) do c.dist = Dist3(ppos, c.loc) end
@@ -163,18 +163,18 @@ end
 
 local function TeleportTo(entry)
     local pawn = GetPawn()
-    if not pawn then return false, "joueur introuvable" end
+    if not pawn then return false, "player not found" end
     -- We re-read the position live : a chest may have moved (platform,
     -- elevator) since the tour was built.
     local loc = ProbeLocation(entry.actor) or entry.loc
     local dest = { X = loc.X, Y = loc.Y, Z = loc.Z + Z_OFFSET }
     local ok = pcall(function() pawn:K2_SetActorLocation(dest, false, {}, true) end)
-    return ok, (not ok) and "K2_SetActorLocation a échoué" or nil
+    return ok, (not ok) and "K2_SetActorLocation failed" or nil
 end
 
 local function GoTo(Ar, n)
     if n < 1 or n > #tour then
-        cout(Ar, "[chest] index hors tournée (1.." .. #tour .. ").")
+        cout(Ar, "[chest] index out of tour (1.." .. #tour .. ").")
         return true
     end
     local e = tour[n]
@@ -184,7 +184,7 @@ local function GoTo(Ar, n)
         return true
     end
     idx = n
-    cout(Ar, string.format("[chest] %d/%d — %s (%.0f m du point de départ)",
+    cout(Ar, string.format("[chest] %d/%d — %s (%.0f m from the start point)",
         n, #tour, e.label, (e.dist or 0) / 100.0))
     return true
 end
@@ -199,7 +199,7 @@ RegisterConsoleCommandGlobalHandler("chest", function(FullCommand, Parameters, A
     if key == "list" then
         local chests = CollectChests()
         if #chests == 0 then
-            cout(Ar, "[chest] aucun coffre chargé actuellement.")
+            cout(Ar, "[chest] no chest loaded right now.")
             return true
         end
         local pawn = GetPawn()
@@ -208,7 +208,7 @@ RegisterConsoleCommandGlobalHandler("chest", function(FullCommand, Parameters, A
             for _, c in ipairs(chests) do c.dist = Dist3(ppos, c.loc) end
             table.sort(chests, function(a, b) return a.dist < b.dist end)
         end
-        cout(Ar, "[chest] " .. #chests .. " coffre(s) chargé(s) :")
+        cout(Ar, "[chest] " .. #chests .. " chest(s) loaded:")
         for i, c in ipairs(chests) do
             cout(Ar, string.format("   %2d. %-12s %6.0f m", i, c.label, (c.dist or 0) / 100.0))
         end
@@ -218,12 +218,12 @@ RegisterConsoleCommandGlobalHandler("chest", function(FullCommand, Parameters, A
     if key == "reset" or key == "again" or key == "restart" then
         local ok, err = BuildTour(Ar)
         if not ok then cout(Ar, "[chest] " .. tostring(err)); return true end
-        cout(Ar, "[chest] tournée reconstruite : " .. #tour .. " coffre(s). Tape 'chest'.")
+        cout(Ar, "[chest] tour rebuilt: " .. #tour .. " chest(s). type 'chest'.")
         return true
     end
 
     if key == "prev" or key == "back" then
-        if #tour == 0 then cout(Ar, "[chest] pas de tournée en cours."); return true end
+        if #tour == 0 then cout(Ar, "[chest] no tour in progress."); return true end
         return GoTo(Ar, idx - 1 >= 1 and idx - 1 or #tour)
     end
 
@@ -243,7 +243,7 @@ RegisterConsoleCommandGlobalHandler("chest", function(FullCommand, Parameters, A
     end
 
     if key ~= "" then
-        cout(Ar, "[chest] argument inconnu : " .. key .. "  (essaie : chest help)")
+        cout(Ar, "[chest] unknown argument: " .. key .. "  (try: chest help)")
         return true
     end
 
@@ -251,15 +251,15 @@ RegisterConsoleCommandGlobalHandler("chest", function(FullCommand, Parameters, A
     if TourIsStale() then
         local ok, err = BuildTour(Ar)
         if not ok then cout(Ar, "[chest] " .. tostring(err)); return true end
-        cout(Ar, "[chest] tournée : " .. #tour .. " coffre(s) trouvé(s).")
+        cout(Ar, "[chest] tour: " .. #tour .. " chest(s) found.")
     end
 
     local nxt = idx + 1
     if nxt > #tour then
         nxt = 1
-        cout(Ar, "[chest] fin de la tournée — on repart du plus proche.")
+        cout(Ar, "[chest] end of tour — restarting from the nearest.")
     end
     return GoTo(Ar, nxt)
 end)
 
-log("Chargé. Tape 'chest' dans la console (F10). 'chest help' pour les options.")
+log("loaded. type 'chest' in the console (F10). 'chest help' for the options.")

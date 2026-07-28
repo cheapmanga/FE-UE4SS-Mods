@@ -95,7 +95,7 @@ end)
 -- ---------------------------------------------------------------------------
 local function ApplyMultiJump(on)
     local pawn = GetPawn()
-    if not pawn then return false, "joueur introuvable" end
+    if not pawn then return false, "player not found" end
     local ok, err = pcall(function()
         if on then
             if SavedJumpMax == nil then SavedJumpMax = pawn.JumpMaxCount end
@@ -126,15 +126,15 @@ end)
 -- ---------------------------------------------------------------------------
 local function ToggleMoon(Ar)
     MoonOn = not MoonOn
-    cout(Ar, "[moonjump] " .. (MoonOn and ("ON — maintiens " .. JUMP_KEY .. " pour monter (" .. RISE_SPEED .. " cm/s).") or "OFF."))
+    cout(Ar, "[moonjump] " .. (MoonOn and ("ON — hold " .. JUMP_KEY .. " to rise (" .. RISE_SPEED .. " cm/s).") or "OFF."))
 end
 
 local function ToggleMulti(Ar)
     local want = not MultiOn
     local ok, err = ApplyMultiJump(want)
-    if not ok then cout(Ar, "[multijump] échec : " .. tostring(err)); return end
+    if not ok then cout(Ar, "[multijump] failed: " .. tostring(err)); return end
     MultiOn = want
-    cout(Ar, "[multijump] " .. (MultiOn and ("ON — JumpMaxCount = " .. MULTI_COUNT .. ".") or "OFF — JumpMaxCount restauré."))
+    cout(Ar, "[multijump] " .. (MultiOn and ("ON — JumpMaxCount = " .. MULTI_COUNT .. ".") or "OFF — JumpMaxCount restored."))
 end
 
 RegisterKeyBind(Key.F7, function() ToggleMoon(nil) end)
@@ -149,16 +149,16 @@ RegisterConsoleCommandGlobalHandler("moonjump", function(FullCommand, Parameters
 
     if sub == "speed" then
         local n = tonumber(p[2])
-        if not n then cout(Ar, "[moonjump] usage : moonjump speed <nombre>"); return true end
+        if not n then cout(Ar, "[moonjump] usage: moonjump speed <number>"); return true end
         RISE_SPEED = n
-        cout(Ar, "[moonjump] vitesse de montée = " .. n .. " cm/s.")
+        cout(Ar, "[moonjump] rise speed = " .. n .. " cm/s.")
         return true
     end
 
     if sub == "key" then
-        if not p[2] then cout(Ar, "[moonjump] usage : moonjump key <FKey>  (ex. SpaceBar)"); return true end
+        if not p[2] then cout(Ar, "[moonjump] usage: moonjump key <FKey>  (e.g. SpaceBar)"); return true end
         JUMP_KEY = p[2]
-        cout(Ar, "[moonjump] touche surveillée = " .. JUMP_KEY .. ".")
+        cout(Ar, "[moonjump] watched key = " .. JUMP_KEY .. ".")
         return true
     end
 
@@ -180,4 +180,4 @@ RegisterConsoleCommandGlobalHandler("multijump", function(FullCommand, Parameter
     return true
 end)
 
-log("Chargé. F7 = moonjump (maintenir " .. JUMP_KEY .. "), F6 = multijump. Console : moonjump | multijump.")
+log("loaded. F7 = moonjump (hold " .. JUMP_KEY .. "), F6 = multijump. Console: moonjump | multijump.")
