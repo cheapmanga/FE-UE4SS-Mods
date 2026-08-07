@@ -1,6 +1,6 @@
 # FE VoidCancel — fall forever, no void, no respawn
 
-Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). Works on both the full game (Project Ygro) and the Fading Echo Demo.
+Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`).
 
 Toggles the **Void Cancel** state on demand: you keep falling past the usual fall
 limit, the void never catches you and the game never respawns you. The speedrun

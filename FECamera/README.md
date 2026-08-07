@@ -1,6 +1,6 @@
 # FE Camera — change the field of view
 
-Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). Works on both the full game (Project Ygro) and the Fading Echo Demo.
+Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`).
 
 Widens or narrows the player camera's field of view. A wide FOV shows more of the
 room around One (handy for screenshots and for reading a platforming section), a
