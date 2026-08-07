@@ -34,8 +34,8 @@
 --  on the next tick (access violation, confirmed). It only keeps a state you
 --  genuinely reached.
 --
---  ⚠️ THIS STICKS TO THE SAVE. The save system captures this state, so a stuck
---  movement mode can survive a save. Use a throwaway save.
+--  Getting rid of it is easy: `jojo off`, or simply return to the menu, which
+--  clears the state on its own.
 --
 --  ⚠️ `jojo off` does not clear the snap attraction effect nor the re-attach
 --  cooldown that travelling leaves behind. Only reloading does. If snapping
@@ -199,7 +199,7 @@ RegisterConsoleCommandHandler("jojo", function(FullCommand, Parameters, Ar)
         active, restored, announced = true, 0, false
         LoopAsync(POLL_MS, keeper)
         say(Ar, "armed. Now travel through any Pipe: you will come out flying.")
-        say(Ar, "Use a throwaway save — this state is written to saves.")
+        say(Ar, "'jojo off' or a return to the menu clears it.")
         return true
     end
 

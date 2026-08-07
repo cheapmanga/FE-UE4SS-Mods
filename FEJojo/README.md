@@ -108,8 +108,8 @@ real Pipe; the mod only keeps what you reached.
 
 ## Warnings
 
-- **This is written to saves.** Use a throwaway save. A stuck movement mode can
-  survive a save.
+- **Getting rid of it is easy.** `jojo off`, or simply return to the menu — that
+  clears the state on its own.
 - **`jojo off` does not clear everything.** Travelling leaves a snap attraction
   effect and a re-attach cooldown behind, and this mod cannot clear them. If
   snapping misbehaves afterwards, reload.
