@@ -1,6 +1,6 @@
 # FE Skins — One's hidden skins, mesh swaps & outline removal
 
-Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). Works on both the full game (Project Ygro) and the Fading Echo Demo. It applies One's packaged
+Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). It applies One's packaged
 skins directly onto the character mesh (bypassing the Options menu), can swap One's
 whole model for any mesh already shipped in the game, reskin/reshape Bob, and remove
 One's black silhouette (outline).

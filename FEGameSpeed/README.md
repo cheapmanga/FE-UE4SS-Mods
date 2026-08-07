@@ -1,6 +1,6 @@
 # FE GameSpeed — slow-motion and fast-forward
 
-Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). Works on both the full game (Project Ygro) and the Fading Echo Demo.
+Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`).
 
 Scales the speed of the whole game. Slow it right down to study a glitch frame by
 frame, or speed it up to skip a stretch you have already practised a hundred times.

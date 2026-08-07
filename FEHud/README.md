@@ -1,6 +1,6 @@
 # FE Hud — show / hide the HUD
 
-Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). Works on both the full game (Project Ygro) and the Fading Echo Demo.
+Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`).
 
 A one-command mod that toggles the game's HUD off and back on — handy for clean
 screenshots, video capture, or simply seeing the level without the interface in

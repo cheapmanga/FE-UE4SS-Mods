@@ -1,7 +1,6 @@
 # FE Teleport — save & restore your position
 
 Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO` / Project Ygro).
-Works on both the **full game (Project Ygro)** and the **Fading Echo Demo**.
 No compilation needed — pure Lua.
 
 A lightweight alternative to the Cheat Engine teleport table: press one key to

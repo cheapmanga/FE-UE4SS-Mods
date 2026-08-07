@@ -1,7 +1,6 @@
 # FE UE4SS Mods
 
 A collection of **UE4SS Lua mods** for **Fading Echo** (`UE_YGRO` / Project Ygro).
-Works on both the **full game (Project Ygro)** and the **Fading Echo Demo**.
 No compilation needed — pure Lua.  
 
 You can download and install **[UE4SS here](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/Install%20process.md)**

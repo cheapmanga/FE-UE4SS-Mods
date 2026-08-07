@@ -1,6 +1,6 @@
 # FE KillAll — kill every loaded enemy
 
-Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). Works on both the full game (Project Ygro) and the Fading Echo Demo.
+Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`).
 
 It works around `UYgroCheatManager_C::KillAllEnemies()`, which returns without error
 but never actually kills the enemies placed in the level: its internal `Enemies` array

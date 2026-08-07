@@ -1,6 +1,6 @@
 # FE Screenshot — take a screenshot
 
-Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`). Works on both the full game (Project Ygro) and the Fading Echo Demo.
+Standalone UE4SS **Lua** mod for Fading Echo (`UE_YGRO`).
 
 Renders a screenshot at a multiple of your screen resolution through Unreal's own
 `HighResShot` command. On a 1440p screen, `shot 4` produces a 10240×5760 PNG — enough
