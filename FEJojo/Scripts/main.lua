@@ -9,12 +9,7 @@
 --  Travelling through a Pipe puts the character in Flying movement mode. On
 --  the way out the game takes it back. Keep it, and you can fly anywhere.
 --
---  Done by hand it needed a Return-to-Checkpoint from inside a Pipe, with the
---  checkpoint in the SAME reality. Build 1.0.28121 places a soft checkpoint
---  whenever you cross between realities, and that broke the setup. A
---  cross-reality RTC still skips the cleanup on this build, but the end of the
---  loading screen restores walking, so the glitch does not survive it. This
---  mod keeps the mode instead.
+--  On build 1.0.28121 the glitch has not been reproduced without a mod.
 --
 --  HOW IT WORKS
 --  USplineTravelerComponent::SetState() pushes a movement mode and a form
