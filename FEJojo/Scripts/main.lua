@@ -10,9 +10,11 @@
 --  the way out the game takes it back. Keep it, and you can fly anywhere.
 --
 --  Done by hand it needed a Return-to-Checkpoint from inside a Pipe, with the
---  checkpoint in another reality. On build 1.0.28121 that setup still skips
---  the cleanup, but the end of the loading screen restores walking, so the
---  glitch no longer survives it. This mod keeps the mode instead.
+--  checkpoint in the SAME reality. Build 1.0.28121 places a soft checkpoint
+--  whenever you cross between realities, and that broke the setup. A
+--  cross-reality RTC still skips the cleanup on this build, but the end of the
+--  loading screen restores walking, so the glitch does not survive it. This
+--  mod keeps the mode instead.
 --
 --  HOW IT WORKS
 --  USplineTravelerComponent::SetState() pushes a movement mode and a form
