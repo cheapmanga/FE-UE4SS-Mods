@@ -34,10 +34,13 @@ keeps one you actually reached.
 Travelling through a Pipe puts the character in Flying movement mode, and the
 game takes it back on the way out. This mod keeps it.
 
-Done by hand, the glitch needed a Return-to-Checkpoint from inside a Pipe with
-the checkpoint in another reality. On build **1.0.28121** that setup still skips
-the cleanup — you really are flying during the loading screen — but the end of
-the load restores walking, so it no longer survives. Hence this mod.
+Done by hand, the glitch needed a Return-to-Checkpoint from inside a Pipe, with
+the checkpoint in the **same reality**. Build **1.0.28121** places a soft
+checkpoint whenever you cross between realities, and that broke the setup.
+
+A cross-reality Return-to-Checkpoint still skips the cleanup on this build — you
+really are flying for the whole loading screen — but the end of the load
+restores walking, so the glitch no longer survives it. Hence this mod.
 
 ## How it works
 
