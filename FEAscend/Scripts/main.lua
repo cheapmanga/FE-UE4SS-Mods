@@ -1,20 +1,23 @@
 -- ============================================================================
---  FADING ECHO — MOON JUMP  (separate mod: infinite jump / BotW-style flight)
+--  FADING ECHO — ASCEND  (rise by flying, and unlimited mid-air re-jumps)
 --
 --  Two independent modes:
---   - MOONJUMP (F3)  : as long as JUMP is HELD, we force the vertical velocity
---                      -> the character rises continuously (BotW's "moonjump").
+--   - ASCEND (F3)    : as long as JUMP is HELD, we force the vertical velocity
+--                      -> the character rises continuously. This is FLIGHT, not
+--                      jumping: nothing about it resembles a moon jump, which is
+--                      why the mod is no longer called that. The mode that IS a
+--                      moon jump is MultiJump on F4.
 --                      Relies on LaunchCharacter(vel, false, true): a UFUNCTION
 --                      of ACharacter, hence callable via UE4SS.
 --   - MULTIJUMP (F4) : JumpMaxCount = 999 -> you can re-jump in mid-air at will
 --                      ("classic" infinite jump, keeps the game's physics).
 --
 --  Console (²):
---   moonjump            toggle moonjump
---   moonjump speed <n>  rise speed (default 700, in cm/s)
---   moonjump key <FKey> watched key (default SpaceBar; e.g. Gamepad_FaceButton_Bottom)
+--   ascend            toggle ascend
+--   ascend speed <n>  rise speed (default 700, in cm/s)
+--   ascend key <FKey> watched key (default SpaceBar; e.g. Gamepad_FaceButton_Bottom)
 --   multijump           toggle multijump
---   moonjump status     current state
+--   ascend status     current state
 -- ============================================================================
 
 local UEHelpers = require("UEHelpers")
@@ -24,10 +27,10 @@ local JUMP_KEY     = "SpaceBar"   -- FKey watched for the hold
 local MULTI_COUNT  = 999
 local TICK_MS      = 16           -- ~60 Hz
 
-local MoonOn, MultiOn = false, false
+local AscendOn, MultiOn = false, false
 local SavedJumpMax = nil          -- to restore cleanly
 
-local function log(m) print("[MoonJump] " .. tostring(m) .. "\n") end
+local function log(m) print("[Ascend] " .. tostring(m) .. "\n") end
 local function cout(Ar, m)
     pcall(function() if Ar then Ar:Log(m) end end)
     log(m)
@@ -68,7 +71,7 @@ local function IsJumpHeld(pc)
 end
 
 -- ---------------------------------------------------------------------------
---  MOONJUMP: rise loop as long as the key is held
+--  ASCEND: rise loop as long as the key is held
 -- ---------------------------------------------------------------------------
 -- Pawn for the current tick. Written by the async loop, READ by the stable
 -- function below: it must NOT be captured by a per-pass closure (see why below).
@@ -80,7 +83,7 @@ local TickPawn = nil
 -- get_function_ref] Ref was not function" -> UE4SS REMOVES the EngineTick hook ->
 -- EVERY Lua mod stops until the game restarts, at an unpredictable moment.
 -- (Same fix as FEBadApple's gameTick.)
-local function moonTick()
+local function ascendTick()
     -- Under pcall: an error must NEVER reach the hook (same consequence as above).
     pcall(function()
         local pawn = TickPawn
@@ -93,14 +96,14 @@ local function moonTick()
 end
 
 LoopAsync(TICK_MS, function()
-    if MoonOn then
+    if AscendOn then
         pcall(function()
             local pc = GetPC()
             if not (pc and IsJumpHeld(pc)) then return end
             local pawn = pc.Pawn
             if not isRealActor(pawn) then return end
             TickPawn = pawn
-            ExecuteInGameThread(moonTick)   -- same ref every pass, GC-safe
+            ExecuteInGameThread(ascendTick)   -- same ref every pass, GC-safe
         end)
     end
     return false
@@ -140,9 +143,9 @@ end)
 -- ---------------------------------------------------------------------------
 --  Toggles
 -- ---------------------------------------------------------------------------
-local function ToggleMoon(Ar)
-    MoonOn = not MoonOn
-    cout(Ar, "[moonjump] " .. (MoonOn and ("ON — hold " .. JUMP_KEY .. " to rise (" .. RISE_SPEED .. " cm/s).") or "OFF."))
+local function ToggleAscend(Ar)
+    AscendOn = not AscendOn
+    cout(Ar, "[ascend] " .. (AscendOn and ("ON — hold " .. JUMP_KEY .. " to rise (" .. RISE_SPEED .. " cm/s).") or "OFF."))
 end
 
 local function ToggleMulti(Ar)
@@ -154,28 +157,28 @@ local function ToggleMulti(Ar)
 end
 
 -- F3 / F4: F6/F7 belong to FETeleport (save/load position) and F9/F10 to FEVoidCancel.
-RegisterKeyBind(Key.F3, function() ToggleMoon(nil) end)
+RegisterKeyBind(Key.F3, function() ToggleAscend(nil) end)
 RegisterKeyBind(Key.F4, function() ExecuteInGameThread(function() ToggleMulti(nil) end) end)
 
 -- ---------------------------------------------------------------------------
 --  Console
 -- ---------------------------------------------------------------------------
-RegisterConsoleCommandGlobalHandler("moonjump", function(FullCommand, Parameters, Ar)
+RegisterConsoleCommandGlobalHandler("ascend", function(FullCommand, Parameters, Ar)
     local p   = Parameters or {}
     local sub = (p[1] and string.lower(p[1])) or "toggle"
 
     if sub == "speed" then
         local n = tonumber(p[2])
-        if not n then cout(Ar, "[moonjump] usage: moonjump speed <number>"); return true end
+        if not n then cout(Ar, "[ascend] usage: ascend speed <number>"); return true end
         RISE_SPEED = n
-        cout(Ar, "[moonjump] rise speed = " .. n .. " cm/s.")
+        cout(Ar, "[ascend] rise speed = " .. n .. " cm/s.")
         return true
     end
 
     if sub == "key" then
-        if not p[2] then cout(Ar, "[moonjump] usage: moonjump key <FKey>  (e.g. SpaceBar)"); return true end
+        if not p[2] then cout(Ar, "[ascend] usage: ascend key <FKey>  (e.g. SpaceBar)"); return true end
         JUMP_KEY = p[2]
-        cout(Ar, "[moonjump] watched key = " .. JUMP_KEY .. ".")
+        cout(Ar, "[ascend] watched key = " .. JUMP_KEY .. ".")
         return true
     end
 
@@ -183,14 +186,14 @@ RegisterConsoleCommandGlobalHandler("moonjump", function(FullCommand, Parameters
         local pawn = GetPawn()
         local jm = "?"
         pcall(function() if pawn then jm = tostring(pawn.JumpMaxCount) end end)
-        -- %s and not %d: `moonjump speed 250.5` stores a float, and %d raises
+        -- %s and not %d: `ascend speed 250.5` stores a float, and %d raises
         -- "number has no integer representation" in Lua 5.4 (no pcall here).
-        cout(Ar, string.format("[moonjump] moon=%s multi=%s speed=%s key=%s JumpMaxCount=%s",
-            tostring(MoonOn), tostring(MultiOn), RISE_SPEED, JUMP_KEY, jm))
+        cout(Ar, string.format("[ascend] ascend=%s multi=%s speed=%s key=%s JumpMaxCount=%s",
+            tostring(AscendOn), tostring(MultiOn), RISE_SPEED, JUMP_KEY, jm))
         return true
     end
 
-    ToggleMoon(Ar)
+    ToggleAscend(Ar)
     return true
 end)
 
@@ -199,4 +202,4 @@ RegisterConsoleCommandGlobalHandler("multijump", function(FullCommand, Parameter
     return true
 end)
 
-log("loaded. F3 = moonjump (hold " .. JUMP_KEY .. "), F4 = multijump. Console: moonjump | multijump.")
+log("loaded. F3 = ascend (hold " .. JUMP_KEY .. "), F4 = multijump. Console: ascend | multijump.")
