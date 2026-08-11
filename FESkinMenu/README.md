@@ -1,5 +1,8 @@
 # FE Skin Menu — every skin, in the game's own Options menu
 
+<img width="700" height="261" alt="image" src="https://github.com/user-attachments/assets/d4f2605e-dd93-429e-9f67-ac642b2637a3" />
+
+
 For Fading Echo **1.0.27953**.
 
 The game already contains five skins for One and a complete "Marcel Bob" spinner for Bob. The
