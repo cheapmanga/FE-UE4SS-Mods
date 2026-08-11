@@ -3,7 +3,7 @@
 <img width="700" height="261" alt="image" src="https://github.com/user-attachments/assets/d4f2605e-dd93-429e-9f67-ac642b2637a3" />
 
 
-For Fading Echo **1.0.27953**.
+Standalone UE4SS **Lua** mod + content patch for Fading Echo (`UE_YGRO`), build **1.0.27953**.
 
 The game already contains five skins for One and a complete "Marcel Bob" spinner for Bob. The
 menu only ever offered two of One's, and never showed Bob's row at all. This restores both — in
@@ -29,7 +29,8 @@ The download holds two pieces, with two destinations.
 <game>\UE_YGRO\Content\Paks\
 ```
 
-**Mod** — copy the `FESkinMenu` folder from `Mods/` into:
+**Mod** — needs [UE4SS installed](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/Install%20process.md) for Fading Echo. Copy the `FESkinMenu`
+folder from `Mods/` into:
 
 ```
 <game>\UE_YGRO\Binaries\Win64\ue4ss\Mods\
@@ -37,8 +38,9 @@ The download holds two pieces, with two destinations.
 
 Then **restart the game**: containers are only mounted at launch.
 
-The pak alone already gives you every menu entry, so it is worth installing even without UE4SS —
-only Marcel Bob stays inert without the mod.
+No UE4SS? Install the content patch on its own: you still get every menu entry and every skin
+for One, and only Marcel Bob stays inert. You can always
+[add UE4SS](https://github.com/cheapmanga/FE-UE4SS-Mods/blob/main/UE4SS-installation/Install%20process.md) later and drop the mod in.
 
 ## Use
 
