@@ -10,8 +10,7 @@ menu only ever offered two of One's, and never showed Bob's row at all. This res
 the real Options menu, with the game's own localized names — and finishes the artwork that was
 still unpainted at this build.
 
-**Download:** [⬇ FE-Skins-27953.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FE-Skins-27953.zip) — mod **+ content patch**, this is the one you want
-**Mod only:** [⬇ FESkinMenu.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FESkinMenu.zip)
+**Download:** [⬇ FE-Skins-27953.zip](https://raw.githubusercontent.com/cheapmanga/FE-UE4SS-Mods/main/dist/FE-Skins-27953.zip) — mod **+ content patch**
 
 | | Vanilla 1.0.27953 | With this |
 |---|---|---|
